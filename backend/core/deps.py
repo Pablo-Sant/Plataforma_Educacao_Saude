@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from core.database import SessionLocal
 from core.auth import oauth2_schema
 from core.configs import settings
-from models.usuario_model import UsuarioModel
+#from models.usuario_model import UsuarioModel
 
 
 class TokenData(BaseModel):
@@ -50,7 +50,7 @@ async def get_current_user(db = Depends(get_session), token:str = Depends(oauth2
         raise credential_exception
     
     result = await db.execute(
-        select(UsuarioModel).filter(UsuarioModel.id == int(token_data.username)),
+        #select(UsuarioModel).filter(UsuarioModel.id == int(token_data.username)),
     )
     
     usuario = result.scalars().unique().one_or_none()
