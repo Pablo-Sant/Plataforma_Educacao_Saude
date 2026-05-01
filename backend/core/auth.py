@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import jwt
-from models.usuario_model import UsuarioModel
+from backend.models.paciente_model import UsuarioModel
 from core.configs import settings
 from core.security import verificar_senha
 from pydantic import EmailStr
