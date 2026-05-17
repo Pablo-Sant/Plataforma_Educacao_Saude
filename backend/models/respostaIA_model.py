@@ -2,15 +2,15 @@ from sqlalchemy import Column, Integer, String, CheckConstraint, DateTime, Forei
 from core.configs import DBBaseModel
 from sqlalchemy.orm import relationship
 from datetime import datetime
+from enum import Enum
+from sqlalchemy import Enum as SQLEnum
 
 
-class PerguntaModel(DBBaseModel):
-    __tablename__='perguntas'
-    
+class RespostaIAModel(DBBaseModel):
+    __tablename__='respostasIA'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     texto = Column(Text, nullable=False)
-    tipo = Column(Text) 
-    created_at = Column(DateTime, default=datetime.now)
+    atendimentoID = Column(Integer, ForeignKey('atendimentos.id'))
     
-    opcao_pergunta = relationship('OpcaoPerguntaModel', back_populates='pergunta')
+    atendimento = relationship('AtendimentoModel', back_populates='respostaIA')

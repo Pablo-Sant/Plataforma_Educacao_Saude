@@ -3,14 +3,11 @@ from core.configs import DBBaseModel
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
-
-class PerguntaModel(DBBaseModel):
-    __tablename__='perguntas'
-    
+class OpcaoPerguntaModel(DBBaseModel):
+    __tablename__='opcao_pergunta'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     texto = Column(Text, nullable=False)
-    tipo = Column(Text) 
-    created_at = Column(DateTime, default=datetime.now)
+    perguntaID = Column(Integer, ForeignKey('perguntas.id'))
     
-    opcao_pergunta = relationship('OpcaoPerguntaModel', back_populates='pergunta')
+    pergunta = relationship('PerguntaModel', back_populates='opcao_pergunta')
