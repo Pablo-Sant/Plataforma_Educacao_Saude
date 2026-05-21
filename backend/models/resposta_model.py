@@ -11,9 +11,9 @@ class RespostaModel(DBBaseModel):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     resposta = Column(Text, nullable=False)
-    atendimentoID = Column(Integer, ForeignKey('atendimentos.id'), nullable=False)
-    perguntaID = Column(Integer, ForeignKey('perguntas.id'), nullable=False)
-    opcao_perguntaID = Column(Integer, ForeignKey('opcao_pergunta.id'), nullable=False)
+    atendimento_id = Column(Integer, ForeignKey('atendimentos.id'), nullable=False)
+    pergunta_id = Column(Integer, ForeignKey('perguntas.id'), nullable=False)
+    opcao_pergunta_id = Column(Integer, ForeignKey('opcao_pergunta.id'), nullable=False)
     
     atendimento = relationship('AtendimentoModel', back_populates='respostas')
     perguntas = relationship('PerguntaModel', back_populates='resposta')
