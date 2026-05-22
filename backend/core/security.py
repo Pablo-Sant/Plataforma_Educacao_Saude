@@ -16,5 +16,6 @@ def verificar_senha(senha: str, hash_senha: str) -> bool:
     """
     try:
         return ph.verify(hash_senha, senha)
+    
     except VerifyMismatchError:
         return False

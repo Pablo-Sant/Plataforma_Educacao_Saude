@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
+# Não faz sentido ter schema para pergunta, pois somos nós que iremos colocar no banco de dados, não será necessário uso de API. Mas vou apagar depois
 
 class PerguntaBase(BaseModel):
     texto: str
