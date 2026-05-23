@@ -6,3 +6,9 @@ class PacientePrecisaIdade(Exception):
 
 class MedicoPrecisaCRM(Exception):
     pass
+
+class UsuarioNaoCadastrado(Exception):
+    pass
+
+class EmailOuSenhaIncorretos(Exception):
+    pass

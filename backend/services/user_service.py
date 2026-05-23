@@ -7,6 +7,8 @@ from backend.core.security import gerar_hash_senha
 from sqlalchemy.future import select
 from backend.exceptions.users_exceptions import UserJaExistente, PacientePrecisaIdade, MedicoPrecisaCRM
 from backend.schemas.user_schema import RoleEnum
+from fastapi.security import OAuth2PasswordRequestForm
+from core.auth import autenticar, criar_token_acesso
 
 
 class UserService:
@@ -72,3 +74,15 @@ class UserService:
         except Exception as e:
             await db.rollback()
             raise e
+        
+        
+        
+    @staticmethod
+    async def login(form_data: OAuth2PasswordRequestForm, db: AsyncSession) -> dict:
+        
+        user = autenticar(form_data.username, form_data.password, db)
+        
+        return{
+            'acess_token': criar_token_acesso(sub=user.id),
+            'token_type': 'bearer'
+        }

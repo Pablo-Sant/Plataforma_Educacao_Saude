@@ -9,7 +9,7 @@ from backend.models.paciente_profile import UsuarioModel
 from core.configs import settings
 from core.security import verificar_senha
 from pydantic import EmailStr
-from exceptions.usuarios_execeptions import UsuarioNaoCadastrado, SenhaIncorreta
+from backend.exceptions.users_exceptions import UsuarioNaoCadastrado, EmailOuSenhaIncorretos
 
 oauth2_schema = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/usuarios/login"
@@ -26,7 +26,7 @@ async def autenticar(email: EmailStr, senha: str, db: AsyncSession) -> Optional[
         raise UsuarioNaoCadastrado
     
     if not verificar_senha(senha, usuario.senha):
-        raise SenhaIncorreta
+        raise EmailOuSenhaIncorretos
     
     return usuario
 
