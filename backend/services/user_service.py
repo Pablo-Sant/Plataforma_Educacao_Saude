@@ -1,14 +1,15 @@
-from backend.schemas.user_schema import UserInput
+from backend.schemas.user_schema import UserInput, UserUpdate
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.models.user_model import UserModel
 from backend.models.paciente_profile import PacienteProfile
 from backend.models.medico_profile import MedicoProfile
 from backend.core.security import gerar_hash_senha
 from sqlalchemy.future import select
-from backend.exceptions.users_exceptions import UserJaExistente, PacientePrecisaIdade, MedicoPrecisaCRM
+from backend.exceptions.users_exceptions import UserJaExistente, PacientePrecisaIdade, MedicoPrecisaCRM, UsuarioInexistente
 from backend.schemas.user_schema import RoleEnum
 from fastapi.security import OAuth2PasswordRequestForm
 from core.auth import autenticar, criar_token_acesso
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class UserService:
@@ -71,18 +72,54 @@ class UserService:
             
             return user
         
-        except Exception as e:
+        except SQLAlchemyError:
             await db.rollback()
-            raise e
+            raise 
         
         
         
     @staticmethod
     async def login(form_data: OAuth2PasswordRequestForm, db: AsyncSession) -> dict:
         
-        user = autenticar(form_data.username, form_data.password, db)
+        user = await autenticar(form_data.username, form_data.password, db)
         
         return{
-            'acess_token': criar_token_acesso(sub=user.id),
+            'access_token': criar_token_acesso(sub=user.id),
             'token_type': 'bearer'
         }
+        
+        
+    
+    @staticmethod
+    async def atualizar(dto: UserUpdate, usuario_logado: UserModel, db: AsyncSession):
+        
+        
+        data = dto.model_dump(exclude_unset=True)
+        
+        if 'senha' in data:
+            senha_pura = data.pop('senha')
+            data['senha_hash'] = gerar_hash_senha(senha_pura)
+            
+        for campo, valor in data.items():
+            setattr(usuario_logado, campo, valor)
+            
+        try:
+            await db.commit()
+            await db.refresh(usuario_logado)
+            return usuario_logado
+            
+        except SQLAlchemyError:
+            await db.rollback()
+            raise 
+        
+        
+    @staticmethod
+    async def deletar(usuario_logado: UserModel, db: AsyncSession):
+        
+        try:
+            await db.delete(usuario_logado)
+            await db.commit()
+            
+        except SQLAlchemyError:
+            await db.rollback()
+            raise 

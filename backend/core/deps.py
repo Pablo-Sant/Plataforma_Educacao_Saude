@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from core.database import SessionLocal
 from core.auth import oauth2_schema
 from core.configs import settings
-#from models.usuario_model import UsuarioModel
+from models.user_model import UserModel
 
 
 class TokenData(BaseModel):
@@ -26,7 +26,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
         
 
-async def get_current_user(db = Depends(get_session), token:str = Depends(oauth2_schema)) -> UsuarioModel:
+async def get_current_user(db = Depends(get_session), token:str = Depends(oauth2_schema)) -> UserModel:
     
     credential_exception: HTTPException = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -43,14 +43,16 @@ async def get_current_user(db = Depends(get_session), token:str = Depends(oauth2
         )
         
         user_id: str = payload.get('sub')
+        
         if user_id is None:
             raise credential_exception
         token_data = TokenData(username=user_id)
+        
     except JWTError:
         raise credential_exception
     
     result = await db.execute(
-        #select(UsuarioModel).filter(UsuarioModel.id == int(token_data.username)),
+        select(UserModel).filter(UserModel.id == int(token_data.username)),
     )
     
     usuario = result.scalars().unique().one_or_none()

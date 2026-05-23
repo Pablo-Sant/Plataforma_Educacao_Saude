@@ -12,3 +12,8 @@ class AlertaInput(AlertaModel):
 class AlertaResponse(AlertaModel):
     id: int
     atendimento_id: int
+    
+    
+    model_config = {
+    "from_attributes": True
+}

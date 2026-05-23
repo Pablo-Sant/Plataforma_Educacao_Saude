@@ -36,3 +36,7 @@ class AtendimentoResponse(AtendimentoBase):
     paciente_id: int
     medico_id: int
     
+    model_config = {
+    "from_attributes": True
+}
+    

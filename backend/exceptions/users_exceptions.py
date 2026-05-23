@@ -12,3 +12,7 @@ class UsuarioNaoCadastrado(Exception):
 
 class EmailOuSenhaIncorretos(Exception):
     pass
+
+
+class UsuarioInexistente(Exception):
+    pass

@@ -21,3 +21,8 @@ class PerguntaUpdate(BaseModel):
 class PerguntaResponse(PerguntaBase):
     id: int
     created_at: datetime
+    
+    
+    model_config = {
+    "from_attributes": True
+}
