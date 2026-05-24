@@ -1,8 +1,7 @@
 from backend.core.database import engine
 from backend.core.configs import DBBaseModel
 
-# IMPORTANTE:
-# Isso importa todos os models para o SQLAlchemy registrar as tabelas
+
 from backend.models.__all_models import *
 
 
