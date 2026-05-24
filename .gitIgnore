@@ -1,1 +1,21 @@
+# Ambiente virtual
+.venv/
+
+# Variáveis de ambiente
 .env
+
+# Cache Python
+__pycache__/
+*.pyc
+
+# VSCode
+.vscode/
+
+# Pytest
+.pytest_cache/
+
+# Alembic
+alembic/versions/*.pyc
+
+# Logs
+*.log

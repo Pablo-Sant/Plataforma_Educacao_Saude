@@ -1,11 +1,8 @@
-# core/database.py
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import declarative_base
-from core.configs import settings
-from typing import AsyncGenerator
+from backend.core.configs import settings
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

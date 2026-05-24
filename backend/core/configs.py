@@ -1,15 +1,16 @@
-import os
 from pydantic_settings import BaseSettings
 from sqlalchemy.ext.declarative import declarative_base
-from dotenv import load_dotenv
-load_dotenv()
 
 
 DBBaseModel = declarative_base()
 
 class Settings(BaseSettings):
-    API_V1_STR:str = '/api/v1'
-    DB_URL:str 
+    API_V1_STR: str = '/api/v1'
+    DB_URL: str 
+    
+    JWT_SECRET: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
     
 
     class Config:

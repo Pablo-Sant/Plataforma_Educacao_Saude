@@ -2,12 +2,13 @@ from sqlalchemy import Column, Integer, String, CheckConstraint, DateTime, Forei
 from backend.core.configs import DBBaseModel
 from sqlalchemy.orm import relationship
 from datetime import datetime
-    
-class AlertaModel(DBBaseModel):
-    __tablename__='alertas'
+
+class OpcaoRespostaModel(DBBaseModel):
+    __tablename__='opcao_pergunta'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     texto = Column(Text, nullable=False)
-    atendimentoID = Column(Integer, ForeignKey('atendimentos.id'))
+    perguntaID = Column(Integer, ForeignKey('perguntas.id'))
+    proxima_pergunta_id = Column(Integer, ForeignKey('perguntas.id'), nullable=False)
     
-    atendimentos = relationship('AtendimentoModel', back_populates='alerta')
+    pergunta = relationship('PerguntaModel', back_populates='opcao_pergunta')
