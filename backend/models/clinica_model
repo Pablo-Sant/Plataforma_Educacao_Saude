@@ -1,0 +1,18 @@
+from sqlalchemy import Column, Integer, String, CheckConstraint, DateTime, ForeignKey
+from backend.core.configs import DBBaseModel
+from sqlalchemy.orm import relationship
+from datetime import datetime
+
+
+class Clinica(DBBaseModel):
+    __tablename__= 'clinicas'
+    id = Column(Integer, Primary_key=True, autoincrement=true)
+    nome = column(string(100), nullable=false, unique=true)
+    senha = column(String(100), nullable = false, unique=true)
+    endereco = column(string(300), nullable=false)
+    telefone = column(string(20), nullable=false)
+    email = column(string(100), nullable=false, unique=true)
+
+    medico = relationship('medico_profile', back_populates='clinica')
+    atendimentos= relationship('atendimentos_model', back_populates='clinica')
+    pacientes = relationship('paciente_profile', back_populates='clinica')
