@@ -6,3 +6,4 @@ from backend.models.paciente_profile import PacienteProfile
 from backend.models.pergunta_model import PerguntaModel
 from backend.models.resposta_model import RespostaModel
 from backend.models.user_model import UserModel
+from backend.models.clinica_model import ClinicaModel
