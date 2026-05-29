@@ -15,6 +15,6 @@ class ClinicaModel(DBBaseModel):
     endereco = Column(String(255), nullable=True)
     ativa = Column(Boolean, default=True)
 
-    medico = relationship('MedicoProfile', back_populates='clinica', cascade='all, delete-orphan')
+    medicos = relationship('MedicoProfile', back_populates='clinica', cascade='all, delete-orphan')
     atendimentos= relationship('AtendimentoModel', back_populates='clinica', cascade='all, delete-orphan')
     pacientes = relationship('PacienteProfile', back_populates='clinica', cascade='all, delete-orphan')

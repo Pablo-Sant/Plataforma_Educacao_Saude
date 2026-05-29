@@ -13,4 +13,4 @@ class PerguntaModel(DBBaseModel):
     tipo = Column(Text) 
     created_at = Column(DateTime, default=datetime.now)
     
-    opcao_pergunta = relationship('OpcaoPerguntaModel', back_populates='pergunta')
+    opcao_resposta = relationship('OpcaoRespostaModel', foreign_keys='OpcaoRespostaModel.pergunta_id', back_populates='pergunta')

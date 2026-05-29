@@ -1,6 +1,6 @@
 import asyncio
 from backend.core.database import SessionLocal
-from backend.models.pergunta_model import PerguntaModel
+from backend.models.__all_models import *
 
 
 ## tipo de perguntas ainda discutível

@@ -13,4 +13,4 @@ class MedicoProfile(DBBaseModel):
     
     user = relationship('UserModel', back_populates='medico')
     atendimentos = relationship('AtendimentoModel', back_populates='medico')  
-    clinica = relationship('ClinicaModel', back_populates='medico') 
+    clinica = relationship('ClinicaModel', back_populates='medicos') 

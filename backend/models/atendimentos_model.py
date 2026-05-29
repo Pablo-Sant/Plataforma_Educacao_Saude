@@ -29,8 +29,10 @@ class AtendimentoModel(DBBaseModel):
     data_atendimento = Column(DateTime, default=datetime.now, nullable=False)
     paciente_id = Column(Integer, ForeignKey('pacientes.id'), nullable=False)
     medico_id = Column(Integer, ForeignKey('medicos.id'), nullable=False)
+    clinica_id = Column(Integer, ForeignKey('clinicas.id'), nullable=False)
     
     paciente = relationship('PacienteProfile', back_populates='atendimentos')
     medico = relationship('MedicoProfile', back_populates='atendimentos')
+    clinica = relationship('ClinicaModel', back_populates='atendimentos')
     alerta = relationship('AlertaModel', back_populates='atendimentos', cascade='all, delete-orphan')
     respostas = relationship('RespostaModel', back_populates='atendimento', cascade='all, delete-orphan')

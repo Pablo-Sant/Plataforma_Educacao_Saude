@@ -13,8 +13,7 @@ class RespostaModel(DBBaseModel):
     resposta = Column(Text, nullable=False)
     atendimento_id = Column(Integer, ForeignKey('atendimentos.id'), nullable=False)
     pergunta_id = Column(Integer, ForeignKey('perguntas.id'), nullable=False)
-    opcao_pergunta_id = Column(Integer, ForeignKey('opcao_pergunta.id'), nullable=False)
+    opcao_resposta_id = Column(Integer, ForeignKey('opcao_resposta.id'), nullable=False)
     
     atendimento = relationship('AtendimentoModel', back_populates='respostas')
-    perguntas = relationship('PerguntaModel', back_populates='resposta')
-    opcao_pergunta = relationship('OpcaoPerguntaModel', back_populates='resposta')
+    
