@@ -1,0 +1,14 @@
+
+from fluxo_schema import ClassificacaoUrgencia, TriagemResultado
+
+def calcular_triagem(
+    respostas: list[dict],
+    
+) -> TriagemResultado:
+     pontuacao_total = sum(resposta for resposta in respostas)
+     if pontuacao_total >= 8:
+         classificacao = ClassificacaoUrgencia.ALTA
+     elif pontuacao_total >= 4:
+         classificacao = ClassificacaoUrgencia.MEDIA
+     else:
+         classificacao = ClassificacaoUrgencia.BAIXA

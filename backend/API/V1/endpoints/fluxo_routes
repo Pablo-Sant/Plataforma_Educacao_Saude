@@ -1,0 +1,20 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
+ 
+from backend.core.database import get_db
+from backend.models.__all_models import (
+    PerguntaModel,
+    OpcaoRespostaModel,
+    RespostaModel,
+    AtendimentoModel,
+)
+from backend.schemas.fluxo_schema import (
+    FluxoRespostaOut,
+    PerguntaFluxoOut,
+    OpcaoRespostaOut,
+    RespostaInput,
+)
+from triagem_service import calcular_triagem
+ 
+router = APIRouter(prefix="/fluxo", tags=["Fluxo de Triagem"])
