@@ -1,20 +1,79 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
- 
+
 from backend.core.database import get_db
-from backend.models.__all_models import (
-    PerguntaModel,
-    OpcaoRespostaModel,
-    RespostaModel,
-    AtendimentoModel,
-)
+
+from backend.models.pergunta_model import PerguntaModel
+from backend.models.opcao_resposta_model import OpcaoRespostaModel
+from backend.models.resposta_model import RespostaModel
+from backend.models.atendimentos_model import AtendimentoModel
+
 from backend.schemas.fluxo_schema import (
     FluxoRespostaOut,
     PerguntaFluxoOut,
     OpcaoRespostaOut,
-    RespostaInput,
 )
-from triagem_service import calcular_triagem
- 
-router = APIRouter(prefix="/fluxo", tags=["Fluxo de Triagem"])
+
+from backend.schemas.resposta_schema import RespostaInput
+
+from backend.services.triagem_service import calcular_triagem
+
+router = APIRouter(
+    prefix="/fluxo",
+    tags=["Fluxo de Triagem"]
+)
+
+@router.get("/{atendimento_id}/inicioP")
+async def iniciar_fluxo(
+    atendimento_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    atendimento = await db.get(
+        AtendimentoModel,
+        atendimento_id
+    )
+
+    if not atendimento:
+        raise HTTPException(
+            status_code=404,
+            detail="Atendimento não encontrado"
+        )
+
+    result = await db.execute(
+        select(PerguntaModel)
+        .order_by(PerguntaModel.id)
+    )
+
+    primeira_pergunta = result.scalars().first()
+
+    if not primeira_pergunta:
+        raise HTTPException(
+            status_code=404,
+            detail="Nenhuma pergunta cadastrada"
+        )
+
+    result = await db.execute(
+        select(OpcaoRespostaModel)
+        .where(
+            OpcaoRespostaModel.pergunta_id ==
+            primeira_pergunta.id
+        )
+    )
+
+    opcoes = result.scalars().all()
+
+    return {
+        "pergunta": {
+            "id": primeira_pergunta.id,
+            "texto": primeira_pergunta.texto,
+            "tipo": primeira_pergunta.tipo
+        },
+        "opcoes": [
+            {
+                "id": opcao.id,
+                "texto": opcao.texto
+            }
+            for opcao in opcoes
+        ]
+    }
