@@ -1,34 +1,47 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
 
 from backend.core.database import get_db
 
-from backend.models.pergunta_model import PerguntaModel
-from backend.models.opcao_resposta_model import OpcaoRespostaModel
-from backend.models.resposta_model import RespostaModel
 from backend.models.atendimentos_model import AtendimentoModel
 
 from backend.schemas.fluxo_schema import (
+    FluxoRespostaInput,
     FluxoRespostaOut,
     PerguntaFluxoOut,
-    OpcaoRespostaOut,
+    TriagemResultado
 )
+#########################################################
+#########ainda tentando arrumar o fluxo com proxima pergunta id
+###################################################################
 
-from backend.schemas.resposta_schema import RespostaInput
 
-from backend.services.triagem_service import calcular_triagem
+########testar conexao banco
+
+
+
+from backend.services.fluxo_service import (
+    buscar_pergunta,
+    buscar_opcoes,
+    salvar_resposta,
+    calcular_triagem
+)
 
 router = APIRouter(
     prefix="/fluxo",
     tags=["Fluxo de Triagem"]
 )
 
-@router.get("/{atendimento_id}/inicioP")
+
+@router.get(
+    "/{atendimento_id}/iniciar",
+    response_model=FluxoRespostaOut
+)
 async def iniciar_fluxo(
     atendimento_id: int,
     db: AsyncSession = Depends(get_db)
 ):
+
     atendimento = await db.get(
         AtendimentoModel,
         atendimento_id
@@ -40,40 +53,103 @@ async def iniciar_fluxo(
             detail="Atendimento não encontrado"
         )
 
-    result = await db.execute(
-        select(PerguntaModel)
-        .order_by(PerguntaModel.id)
+    pergunta = await buscar_pergunta(
+        db,
+        1
     )
 
-    primeira_pergunta = result.scalars().first()
-
-    if not primeira_pergunta:
+    if not pergunta:
         raise HTTPException(
             status_code=404,
             detail="Nenhuma pergunta cadastrada"
         )
 
-    result = await db.execute(
-        select(OpcaoRespostaModel)
-        .where(
-            OpcaoRespostaModel.pergunta_id ==
-            primeira_pergunta.id
+    return FluxoRespostaOut(
+        concluido=False,
+        proxima_pergunta=PerguntaFluxoOut(
+            id=pergunta.id,
+            texto=pergunta.texto,
+            tipo=pergunta.tipo
         )
     )
 
-    opcoes = result.scalars().all()
 
-    return {
-        "pergunta": {
-            "id": primeira_pergunta.id,
-            "texto": primeira_pergunta.texto,
-            "tipo": primeira_pergunta.tipo
-        },
-        "opcoes": [
-            {
-                "id": opcao.id,
-                "texto": opcao.texto
-            }
-            for opcao in opcoes
-        ]
-    }
+@router.post(
+    "/{atendimento_id}/responder",
+    response_model=FluxoRespostaOut
+)
+async def responder_pergunta(
+    atendimento_id: int,
+    body: FluxoRespostaInput,
+    db: AsyncSession = Depends(get_db)
+):
+
+    atendimento = await db.get(
+        AtendimentoModel,
+        atendimento_id
+    )
+
+    if not atendimento:
+        raise HTTPException(
+            status_code=404,
+            detail="Atendimento não encontrado"
+        )
+
+    pergunta = await buscar_pergunta(
+        db,
+        body.pergunta_id
+    )
+
+    if not pergunta:
+        raise HTTPException(
+            status_code=404,
+            detail="Pergunta não encontrada"
+        )
+
+    opcao = await salvar_resposta(
+        db,
+        atendimento_id,
+        body.pergunta_id,
+        body.opcao_resposta_id,
+        body.resposta
+    )
+
+    if not opcao.proxima_pergunta_id:
+
+        resultado = await calcular_triagem(
+            db,
+            atendimento_id
+        )
+
+        return FluxoRespostaOut(
+            concluido=True,
+            resultado=resultado,
+            proxima_pergunta=None
+        )
+
+    proxima_pergunta = await buscar_pergunta(
+        db,
+        opcao.proxima_pergunta_id
+    )
+
+    if not proxima_pergunta:
+
+        resultado = await calcular_triagem(
+            db,
+            atendimento_id
+        )
+
+        return FluxoRespostaOut(
+            concluido=True,
+            resultado=resultado,
+            proxima_pergunta=None
+        )
+
+    return FluxoRespostaOut(
+        concluido=False,
+        proxima_pergunta=PerguntaFluxoOut(
+            id=proxima_pergunta.id,
+            texto=proxima_pergunta.texto,
+            tipo=proxima_pergunta.tipo
+        )
+    )

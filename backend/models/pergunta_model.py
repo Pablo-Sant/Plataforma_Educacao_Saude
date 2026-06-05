@@ -12,5 +12,5 @@ class PerguntaModel(DBBaseModel):
     texto = Column(Text, nullable=False)
     tipo = Column(Text) 
     created_at = Column(DateTime, default=datetime.now)
-    
+    peso = Column(Integer, nullable=False, default=1)
     opcao_resposta = relationship('OpcaoRespostaModel', foreign_keys='OpcaoRespostaModel.pergunta_id', back_populates='pergunta')

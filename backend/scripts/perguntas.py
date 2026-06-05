@@ -5,7 +5,9 @@ from backend.models.__all_models import *
 
 ## tipo de perguntas ainda discutível
 ##tipo de perguntas discutivel
-
+##########################################################
+###$$Ainda vou adicionar proxima pergunta id
+##########################################################
 '''
 perguntas = [
     {
