@@ -9,9 +9,10 @@ class OpcaoRespostaModel(DBBaseModel):
     id = Column(Integer, primary_key=True, autoincrement=True)
     texto = Column(Text, nullable=False)
     pergunta_id = Column(Integer, ForeignKey('perguntas.id'))
-    proxima_pergunta_id = Column(Integer, ForeignKey('perguntas.id'), nullable=False)
+    proxima_pergunta_id = Column(Integer, ForeignKey('perguntas.id'), nullable=True)
     pontuacao_risco = Column(Integer, default=0)
     encerra_fluxo = Column(Boolean, default=False)
+    classificacao =Column(String)
 
     
     
