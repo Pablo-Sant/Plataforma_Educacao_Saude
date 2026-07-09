@@ -1,0 +1,274 @@
+.dashboard-page {
+  min-height: 100vh;
+  padding: 32px 24px 48px;
+  background: #eff6ff;
+}
+
+.dashboard-topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.dashboard-welcome {
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dashboard-topbar h1 {
+  margin: 8px 0 0;
+  font-size: 32px;
+  color: #0f172a;
+}
+
+.dashboard-user {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  background: white;
+  padding: 18px 22px;
+  border-radius: 24px;
+  box-shadow: 0 20px 54px rgba(15, 23, 42, 0.08);
+}
+
+.dashboard-user p {
+  margin: 0;
+  color: #475569;
+}
+
+.dashboard-user strong {
+  display: block;
+  margin-top: 4px;
+  color: #0f172a;
+}
+
+.dashboard-logout {
+  background: #1d4ed8;
+  color: white;
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 18px;
+  cursor: pointer;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 24px;
+}
+
+.dashboard-summary {
+  display: grid;
+  gap: 24px;
+}
+
+.summary-card {
+  background: white;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 28px;
+  padding: 24px;
+  box-shadow: 0 20px 54px rgba(15, 23, 42, 0.06);
+}
+
+.summary-card--focus {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+}
+
+.summary-label {
+  margin: 0 0 8px;
+  color: #64748b;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.summary-card strong {
+  display: block;
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.summary-note {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.7;
+}
+
+.dashboard-main {
+  display: grid;
+  gap: 24px;
+}
+
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.dashboard-card {
+  background: white;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 24px;
+  padding: 24px;
+}
+
+.dashboard-card p {
+  margin: 0 0 14px;
+  color: #475569;
+  font-weight: 600;
+}
+
+.dashboard-card strong {
+  font-size: 28px;
+  color: #0f172a;
+}
+
+.dashboard-panel,
+.dashboard-table-card {
+  background: white;
+  border-radius: 32px;
+  padding: 28px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 20px 54px rgba(15, 23, 42, 0.06);
+}
+
+.panel-header,
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.panel-header span,
+.table-header p {
+  color: #475569;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.panel-header h2 {
+  margin: 8px 0 0;
+  font-size: 24px;
+  color: #0f172a;
+}
+
+.panel-header button,
+.table-header button {
+  background: #1d4ed8;
+  color: white;
+  border: 0;
+  border-radius: 16px;
+  padding: 12px 18px;
+  cursor: pointer;
+}
+
+.panel-body {
+  display: grid;
+  gap: 16px;
+}
+
+.panel-text {
+  margin: 0;
+  color: #475569;
+  line-height: 1.8;
+}
+
+.panel-meta {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  color: #0f172a;
+}
+
+.protocol-table {
+  display: grid;
+  gap: 12px;
+}
+
+.protocol-row {
+  display: grid;
+  grid-template-columns: 1fr 2.3fr 1.4fr 1.2fr;
+  gap: 12px;
+  padding: 16px 18px;
+  align-items: center;
+  border-radius: 18px;
+  background: #f8fbff;
+}
+
+.protocol-row--head {
+  background: transparent;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.protocol-status {
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.protocol-status--em-análise {
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+}
+
+.protocol-status--aguardando-revisão {
+  background: rgba(234, 179, 8, 0.16);
+  color: #b45309;
+}
+
+.protocol-status--concluído {
+  background: rgba(16, 185, 129, 0.16);
+  color: #047857;
+}
+
+@media (max-width: 1080px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-user {
+    justify-content: space-between;
+  }
+
+  .dashboard-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .protocol-row,
+  .dashboard-card,
+  .summary-card,
+  .dashboard-panel,
+  .dashboard-table-card {
+    padding: 22px;
+  }
+
+  .protocol-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
