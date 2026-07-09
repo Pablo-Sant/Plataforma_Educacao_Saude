@@ -1,37 +1,37 @@
-import './Dashboard.css'
+import "./Dashboard.css";
 
 const protocolList = [
   {
-    id: '#P-5821',
-    title: 'Triagem de paciente com dor crônica',
-    status: 'Em análise',
-    level: 'Prioridade média',
-    due: 'Hoje, 16:30',
-    owner: 'Dr. Mariana Silva'
+    id: "#P-5821",
+    title: "Triagem de paciente com dor crônica",
+    status: "Em análise",
+    level: "Prioridade média",
+    due: "Hoje, 16:30",
+    owner: "Dr. Mariana Silva",
   },
   {
-    id: '#P-5822',
-    title: 'Protocolo pós-operatório de joelho',
-    status: 'Aguardando revisão',
-    level: 'Alta prioridade',
-    due: 'Amanhã, 09:00',
-    owner: 'Dr. Felipe Costa'
+    id: "#P-5822",
+    title: "Protocolo pós-operatório de joelho",
+    status: "Aguardando revisão",
+    level: "Alta prioridade",
+    due: "Amanhã, 09:00",
+    owner: "Dr. Felipe Costa",
   },
   {
-    id: '#P-5823',
-    title: 'Avaliação de sintomas respiratórios',
-    status: 'Concluído',
-    level: 'Normal',
-    due: 'Ontem, 18:45',
-    owner: 'Dra. Ana Lins'
-  }
-]
+    id: "#P-5823",
+    title: "Avaliação de sintomas respiratórios",
+    status: "Concluído",
+    level: "Normal",
+    due: "Ontem, 18:45",
+    owner: "Dra. Ana Lins",
+  },
+];
 
 const stats = [
-  { label: 'Protocolos ativos', value: '128' },
-  { label: 'Atendimentos hoje', value: '24' },
-  { label: 'Relatórios gerados', value: '84' }
-]
+  { label: "Protocolos ativos", value: "128" },
+  { label: "Atendimentos hoje", value: "24" },
+  { label: "Relatórios gerados", value: "84" },
+];
 
 export default function Dashboard({ role, onLogout }) {
   return (
@@ -44,8 +44,10 @@ export default function Dashboard({ role, onLogout }) {
 
         <div className="dashboard-user">
           <div>
-            <p>{role === 'medico' ? 'Médico' : 'Paciente'} conectado</p>
-            <strong>{role === 'medico' ? 'Dr. Felipe' : 'Paciente João'}</strong>
+            <p>{role === "medico" ? "Médico" : "Paciente"} conectado</p>
+            <strong>
+              {role === "medico" ? "Dr. Felipe" : "Paciente João"}
+            </strong>
           </div>
           <button className="dashboard-logout" onClick={onLogout}>
             Sair
@@ -58,7 +60,9 @@ export default function Dashboard({ role, onLogout }) {
           <div className="summary-card summary-card--focus">
             <p className="summary-label">Protocolo ativo</p>
             <strong>#P-5821</strong>
-            <p className="summary-note">Diagnóstico inicial e plano de tratamento em andamento.</p>
+            <p className="summary-note">
+              Diagnóstico inicial e plano de tratamento em andamento.
+            </p>
           </div>
 
           <div className="summary-card">
@@ -66,7 +70,9 @@ export default function Dashboard({ role, onLogout }) {
               <p className="summary-label">Próximo atendimento</p>
               <strong>16:30</strong>
             </div>
-            <p className="summary-note">Sessão com paciente em recuperação pós-operatória.</p>
+            <p className="summary-note">
+              Sessão com paciente em recuperação pós-operatória.
+            </p>
           </div>
 
           <div className="summary-card">
@@ -74,7 +80,9 @@ export default function Dashboard({ role, onLogout }) {
               <p className="summary-label">Última atualização</p>
               <strong>Há 12 minutos</strong>
             </div>
-            <p className="summary-note">Entrada de dados salva automaticamente.</p>
+            <p className="summary-note">
+              Entrada de dados salva automaticamente.
+            </p>
           </div>
         </aside>
 
@@ -98,7 +106,8 @@ export default function Dashboard({ role, onLogout }) {
             </div>
             <div className="panel-body">
               <p className="panel-text">
-                Veja os detalhes do protocolo e acompanhe o progresso de cada etapa em um fluxo unificado.
+                Veja os detalhes do protocolo e acompanhe o progresso de cada
+                etapa em um fluxo unificado.
               </p>
               <div className="panel-meta">
                 <span>Envolvidos: 5 profissionais</span>
@@ -127,7 +136,9 @@ export default function Dashboard({ role, onLogout }) {
                 <div key={protocol.id} className="protocol-row">
                   <span>{protocol.id}</span>
                   <span>{protocol.title}</span>
-                  <span className={`protocol-status protocol-status--${protocol.status.replace(/\s+/g, '-').toLowerCase()}`}>
+                  <span
+                    className={`protocol-status protocol-status--${protocol.status.replace(/\s+/g, "-").toLowerCase()}`}
+                  >
                     {protocol.status}
                   </span>
                   <span>{protocol.due}</span>
@@ -138,5 +149,5 @@ export default function Dashboard({ role, onLogout }) {
         </section>
       </section>
     </main>
-  )
+  );
 }
