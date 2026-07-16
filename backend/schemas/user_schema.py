@@ -16,14 +16,15 @@ class UserBase(BaseModel):
     email: Optional[EmailStr] = None
     telefone: str = Field(..., min_length=5, max_length=20)
     cpf: str = Field(..., max_length=11)
-    data_criacao: Optional[datetime] = None
     role: RoleEnum
-    idade: Optional[int] = Field(None, ge=0, le=150)
+    idade: Optional[int] = Field(None, ge=0, le=200)
     crm: Optional[str] = Field(None, max_length=15)
+    clinica_id: Optional[int] = None 
     
     
 class UserInput(UserBase):
     pass
+    senha: str
 
 
 class UserUpdate(BaseModel):

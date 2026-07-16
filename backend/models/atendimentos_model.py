@@ -22,13 +22,13 @@ class AtendimentoModel(DBBaseModel):
     __tablename__='atendimentos'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    classificacao_risco = Column(SQLEnum(ClassificacaoRiscoEnum), nullable=False)
-    status = Column(SQLEnum(StatusEnum), nullable=False)
-    descricao = Column(String(500), nullable=False)
+    classificacao_risco = Column(SQLEnum(ClassificacaoRiscoEnum))
+    status = Column(SQLEnum(StatusEnum))
+    descricao = Column(String(500))
     resumo_ia = Column(Text)
-    data_atendimento = Column(DateTime, default=datetime.now, nullable=False)
+    data_atendimento = Column(DateTime, default=datetime.now)
     paciente_id = Column(Integer, ForeignKey('pacientes.id'), nullable=False)
-    medico_id = Column(Integer, ForeignKey('medicos.id'), nullable=False)
+    medico_id = Column(Integer, ForeignKey('medicos.id'))
     clinica_id = Column(Integer, ForeignKey('clinicas.id'), nullable=False)
     
     paciente = relationship('PacienteProfile', back_populates='atendimentos')

@@ -8,10 +8,12 @@ from sqlalchemy.future import select
 from backend.exceptions.users_exceptions import UserJaExistente, PacientePrecisaIdade, MedicoPrecisaCRM, UsuarioInexistente
 from backend.schemas.user_schema import RoleEnum
 from fastapi.security import OAuth2PasswordRequestForm
-from core.auth import autenticar, criar_token_acesso
+from backend.core.auth import autenticar, criar_token_acesso
 from sqlalchemy.exc import SQLAlchemyError
+import logging
 
 
+logger = logging.getLogger(__name__)
 class UserService:
     
     @staticmethod
@@ -50,6 +52,7 @@ class UserService:
         data.pop('crm', None)
         data.pop('idade', None)
         senha_pura = data.pop('senha')
+        clinica_id = data.pop('clinica_id')
         
         user = UserModel(**data, senha_hash = gerar_hash_senha(senha_pura))
         
@@ -59,21 +62,27 @@ class UserService:
             await db.flush()
             
             if role == RoleEnum.PACIENTE:
-                paciente = PacienteProfile(id= user.id, idade= dto.idade)
+                paciente = PacienteProfile(id= user.id, idade= dto.idade, clinica_id= clinica_id)
                 db.add(paciente)
+            
                 
             elif role == RoleEnum.MEDICO:
-                medico = MedicoProfile(id= user.id, crm= dto.crm)
-                db.add(medico)    
+                medico = MedicoProfile(id= user.id, crm= dto.crm, clinica_id=clinica_id)
+                db.add(medico)
+                    
             
                 
             await db.commit()
             await db.refresh(user)
             
+            logger.info("Usuário cadastrado com sucesso CPF=%s, ROLE=%s", user.cpf, user.role)
+            
             return user
         
         except SQLAlchemyError:
             await db.rollback()
+            
+            logger.exception("Erro ao cadastrar usuário CPF=%s", dto.cpf)
             raise 
         
         

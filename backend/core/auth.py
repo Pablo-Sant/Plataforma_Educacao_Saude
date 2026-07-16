@@ -6,8 +6,8 @@ from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import jwt
 from backend.models.user_model import UserModel
-from core.configs import settings
-from core.security import verificar_senha
+from backend.core.configs import settings
+from backend.core.security import verificar_senha
 from pydantic import EmailStr
 from backend.exceptions.users_exceptions import UsuarioNaoCadastrado, EmailOuSenhaIncorretos
 

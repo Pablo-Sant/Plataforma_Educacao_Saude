@@ -19,22 +19,24 @@ class Status(str, Enum):
     
     
 class AtendimentoBase(BaseModel):
-    classificacao_risco: ClassificacaoRiscoEnum
-    status: Status
-    descricao: str = Field(..., max_length=500)
-    resumo_ia: str
-    
+    status: Optional[Status] = None
+    descricao: Optional[str] = Field(None, max_length=500)
+    resumo_ia: Optional[str] = None
+    classificacao_risco: Optional[ClassificacaoRiscoEnum] = None    
     
        
-class AtendimentoInput(AtendimentoBase):
-    pass
+class AtendimentoInput(BaseModel):
+    clinica_id: int
+    paciente_id: int
+    
 
 
 class AtendimentoResponse(AtendimentoBase):
     id: int
     data_atendimento: datetime
     paciente_id: int
-    medico_id: int
+    medico_id: Optional[int] = None
+
     
     model_config = {
     "from_attributes": True

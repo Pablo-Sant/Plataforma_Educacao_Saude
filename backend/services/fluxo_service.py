@@ -1,14 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy import delete
 
 from backend.models.pergunta_model import PerguntaModel
 from backend.models.opcao_resposta_model import OpcaoRespostaModel
 from backend.models.resposta_model import RespostaModel
-
-from backend.schemas.fluxo_schema import (
-    ClassificacaoUrgencia,
-    TriagemResultado
-)
 
 
 async def buscar_pergunta(
@@ -49,14 +45,14 @@ async def salvar_resposta(
     db: AsyncSession,
     atendimento_id: int,
     pergunta_id: int,
-    opcao_id: int,
+    opcao_resposta_id: int,
     resposta_texto: str
 ):
     resposta = RespostaModel(
-        resposta=resposta_texto,
         atendimento_id=atendimento_id,
         pergunta_id=pergunta_id,
-        opcao_resposta_id=opcao_id
+        opcao_resposta_id=opcao_resposta_id,
+        resposta=resposta_texto
     )
 
     db.add(resposta)
@@ -67,46 +63,41 @@ async def salvar_resposta(
     return resposta
 
 
-async def calcular_triagem(
+async def obter_proxima_pergunta(
+    db: AsyncSession,
+    opcao_id: int
+):
+    opcao = await buscar_opcao(
+        db,
+        opcao_id
+    )
+
+    if not opcao:
+        return None
+
+    if opcao.encerra_fluxo:
+        return None
+
+    if not opcao.proxima_pergunta_id:
+        return None
+
+    return await buscar_pergunta(
+        db,
+        opcao.proxima_pergunta_id
+    )
+    
+
+async def limpar_respostas_atendimento(
     db: AsyncSession,
     atendimento_id: int
 ):
 
-    result = await db.execute(
-        select(
-            RespostaModel,
-            PerguntaModel
-        )
-        .join(
-            PerguntaModel,
-            PerguntaModel.id ==
-            RespostaModel.pergunta_id
-        )
+    await db.execute(
+        delete(RespostaModel)
         .where(
             RespostaModel.atendimento_id ==
             atendimento_id
         )
     )
 
-    registros = result.all()
-
-    pontuacao_total = 0
-
-    for resposta, pergunta in registros:
-
-        if resposta.resposta.lower() == "sim":
-            pontuacao_total += pergunta.peso
-
-    if pontuacao_total >= 10:
-        classificacao = ClassificacaoUrgencia.ALTA
-
-    elif pontuacao_total >= 5:
-        classificacao = ClassificacaoUrgencia.MEDIA
-
-    else:
-        classificacao = ClassificacaoUrgencia.BAIXA
-
-    return TriagemResultado(
-        classificacao=classificacao,
-        pontuacao_total=pontuacao_total
-    )
+    await db.commit()

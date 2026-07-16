@@ -1,13 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from backend.schemas.user_schema import UserInput, UserResponse, UserUpdate
 from sqlalchemy.ext.asyncio import AsyncSession
-from core.deps import get_session, get_current_user
+from backend.core.deps import get_session, get_current_user
 from backend.services.user_service import UserService
 from backend.exceptions.users_exceptions import UserJaExistente,PacientePrecisaIdade, MedicoPrecisaCRM, UsuarioNaoCadastrado, EmailOuSenhaIncorretos
-from schemas.token import TokenResponse
+from backend.schemas.token import TokenResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from backend.models.user_model import UserModel
+import logging
 
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -19,6 +21,7 @@ async def post_user(payload: UserInput, db: AsyncSession = Depends(get_session))
         return await UserService.cadastrar(payload, db)
     
     except UserJaExistente:
+        logger.warning("Tentativa de cadastro de CPF já existente CPF=%s", payload.cpf)
         raise HTTPException(detail = 'Usuário já cadastrado', status_code = status.HTTP_409_CONFLICT)
     
     except PacientePrecisaIdade:
