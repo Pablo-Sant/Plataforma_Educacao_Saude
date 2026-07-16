@@ -1,53 +1,182 @@
+import { useState } from "react";
+import {
+  answerTriagem,
+  createAtendimento,
+  getAtendimento,
+  getTriagemResult,
+  restartTriagem,
+  startTriagem,
+} from "../services/api";
 import "./Dashboard.css";
 
-const protocolList = [
-  {
-    id: "#P-5821",
-    title: "Triagem de paciente com dor crônica",
-    status: "Em análise",
-    level: "Prioridade média",
-    due: "Hoje, 16:30",
-    owner: "Dr. Mariana Silva",
-  },
-  {
-    id: "#P-5822",
-    title: "Protocolo pós-operatório de joelho",
-    status: "Aguardando revisão",
-    level: "Alta prioridade",
-    due: "Amanhã, 09:00",
-    owner: "Dr. Felipe Costa",
-  },
-  {
-    id: "#P-5823",
-    title: "Avaliação de sintomas respiratórios",
-    status: "Concluído",
-    level: "Normal",
-    due: "Ontem, 18:45",
-    owner: "Dra. Ana Lins",
-  },
-];
+function formatDate(dateValue) {
+  if (!dateValue) {
+    return "--";
+  }
 
-const stats = [
-  { label: "Protocolos ativos", value: "128" },
-  { label: "Atendimentos hoje", value: "24" },
-  { label: "Relatórios gerados", value: "84" },
-];
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(dateValue));
+}
 
-export default function Dashboard({ role, onLogout }) {
+function statusLabel(status) {
+  const labels = {
+    aguardando: "Aguardando",
+    em_atendimento: "Em atendimento",
+    finalizado: "Finalizado",
+  };
+
+  return labels[status] || status || "--";
+}
+
+function riscoLabel(classificacao) {
+  const labels = {
+    baixo: "Baixo",
+    medio: "Medio",
+    alto: "Alto",
+  };
+
+  return labels[classificacao] || classificacao || "--";
+}
+
+function triagemLabel(classificacao) {
+  return classificacao ? classificacao.replaceAll("_", " ") : "--";
+}
+
+export default function Dashboard({ role, user, onLogout }) {
+  const [clinicaId, setClinicaId] = useState("");
+  const [atendimentoId, setAtendimentoId] = useState("");
+  const [atendimento, setAtendimento] = useState(null);
+  const [triagem, setTriagem] = useState(null);
+  const [selectedOptionId, setSelectedOptionId] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loadingAction, setLoadingAction] = useState(false);
+
+  const currentQuestion = triagem?.proxima_pergunta;
+  const triagemFinalizada = triagem?.concluido;
+
+  async function handleCreateAtendimento(event) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    setLoadingAction(true);
+
+    try {
+      const created = await createAtendimento({
+        clinica_id: Number(clinicaId),
+        paciente_id: user.id,
+      });
+
+      setAtendimento(created);
+      setAtendimentoId(String(created.id));
+      setMessage(`Atendimento #${created.id} criado com sucesso.`);
+
+      const fluxo = await startTriagem(created.id);
+      setTriagem(fluxo);
+      setSelectedOptionId("");
+    } catch (requestError) {
+      setError(requestError.message || "Nao foi possivel criar o atendimento.");
+    } finally {
+      setLoadingAction(false);
+    }
+  }
+
+  async function handleAnswerQuestion(event) {
+    event.preventDefault();
+
+    if (!currentQuestion || !selectedOptionId || !atendimento?.id) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    setLoadingAction(true);
+
+    try {
+      const fluxo = await answerTriagem(atendimento.id, {
+        pergunta_id: currentQuestion.id,
+        opcao_resposta_id: Number(selectedOptionId),
+      });
+
+      setTriagem(fluxo);
+      setSelectedOptionId("");
+
+      if (fluxo.concluido) {
+        setMessage("Triagem concluida com sucesso.");
+      }
+    } catch (requestError) {
+      setError(requestError.message || "Nao foi possivel enviar a resposta.");
+    } finally {
+      setLoadingAction(false);
+    }
+  }
+
+  async function handleRestartTriagem() {
+    if (!atendimento?.id) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    setLoadingAction(true);
+
+    try {
+      const fluxo = await restartTriagem(atendimento.id);
+      setTriagem(fluxo);
+      setSelectedOptionId("");
+      setMessage("Triagem reiniciada.");
+    } catch (requestError) {
+      setError(requestError.message || "Nao foi possivel reiniciar a triagem.");
+    } finally {
+      setLoadingAction(false);
+    }
+  }
+
+  async function handleBuscarAtendimento(event) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    setLoadingAction(true);
+
+    try {
+      const atendimentoEncontrado = await getAtendimento(Number(atendimentoId));
+      setAtendimento(atendimentoEncontrado);
+
+      try {
+        const resultado = await getTriagemResult(Number(atendimentoId));
+        setTriagem({ concluido: true, resultado });
+      } catch {
+        setTriagem(null);
+      }
+
+      setMessage(`Atendimento #${atendimentoId} carregado.`);
+    } catch (requestError) {
+      setError(
+        requestError.message || "Nao foi possivel buscar o atendimento.",
+      );
+    } finally {
+      setLoadingAction(false);
+    }
+  }
+
   return (
     <main className="dashboard-page">
       <div className="dashboard-topbar">
         <div>
           <p className="dashboard-welcome">Bem-vindo de volta</p>
-          <h1>Visão geral do protocolo</h1>
+          <h1>
+            {role === "medico"
+              ? "Consulta de atendimentos"
+              : "Fluxo de triagem"}
+          </h1>
         </div>
 
         <div className="dashboard-user">
           <div>
-            <p>{role === "medico" ? "Médico" : "Paciente"} conectado</p>
-            <strong>
-              {role === "medico" ? "Dr. Felipe" : "Paciente João"}
-            </strong>
+            <p>{role === "medico" ? "Medico" : "Paciente"} conectado</p>
+            <strong>{user?.nome || "Usuario"}</strong>
           </div>
           <button className="dashboard-logout" onClick={onLogout}>
             Sair
@@ -58,93 +187,211 @@ export default function Dashboard({ role, onLogout }) {
       <section className="dashboard-grid">
         <aside className="dashboard-summary">
           <div className="summary-card summary-card--focus">
-            <p className="summary-label">Protocolo ativo</p>
-            <strong>#P-5821</strong>
+            <p className="summary-label">Usuario autenticado</p>
+            <strong>{user?.cpf || "--"}</strong>
             <p className="summary-note">
-              Diagnóstico inicial e plano de tratamento em andamento.
+              Os dados desta tela agora sao carregados e enviados para a API do
+              backend.
             </p>
           </div>
 
           <div className="summary-card">
             <div>
-              <p className="summary-label">Próximo atendimento</p>
-              <strong>16:30</strong>
+              <p className="summary-label">Perfil</p>
+              <strong>{role === "medico" ? "Medico" : "Paciente"}</strong>
             </div>
             <p className="summary-note">
-              Sessão com paciente em recuperação pós-operatória.
+              Email: {user?.email || "nao informado"}
             </p>
           </div>
 
           <div className="summary-card">
             <div>
-              <p className="summary-label">Última atualização</p>
-              <strong>Há 12 minutos</strong>
+              <p className="summary-label">Atendimento atual</p>
+              <strong>{atendimento ? `#${atendimento.id}` : "--"}</strong>
             </div>
             <p className="summary-note">
-              Entrada de dados salva automaticamente.
+              Status: {statusLabel(atendimento?.status)}
             </p>
           </div>
         </aside>
 
         <section className="dashboard-main">
           <div className="dashboard-cards">
-            {stats.map((item) => (
-              <article key={item.label} className="dashboard-card">
-                <p>{item.label}</p>
-                <strong>{item.value}</strong>
-              </article>
-            ))}
+            <article className="dashboard-card">
+              <p>ID do usuario</p>
+              <strong>{user?.id || "--"}</strong>
+            </article>
+            <article className="dashboard-card">
+              <p>Risco do atendimento</p>
+              <strong>{riscoLabel(atendimento?.classificacao_risco)}</strong>
+            </article>
+            <article className="dashboard-card">
+              <p>Triagem</p>
+              <strong>
+                {triagemFinalizada
+                  ? "Concluida"
+                  : currentQuestion
+                    ? "Em andamento"
+                    : "Aguardando"}
+              </strong>
+            </article>
           </div>
 
           <div className="dashboard-panel">
             <div className="panel-header">
               <div>
-                <span>Protocolo em destaque</span>
-                <h2>Triagem de sintomas respiratórios</h2>
+                <span>
+                  {role === "medico"
+                    ? "Buscar atendimento"
+                    : "Novo atendimento"}
+                </span>
+                <h2>
+                  {role === "medico"
+                    ? "Consultar dados reais da API"
+                    : "Criar atendimento e iniciar triagem"}
+                </h2>
               </div>
-              <button>Ver tudo</button>
             </div>
+
             <div className="panel-body">
-              <p className="panel-text">
-                Veja os detalhes do protocolo e acompanhe o progresso de cada
-                etapa em um fluxo unificado.
-              </p>
-              <div className="panel-meta">
-                <span>Envolvidos: 5 profissionais</span>
-                <span>Relatórios: 12</span>
-              </div>
+              {role === "paciente" ? (
+                <form
+                  className="dashboard-form"
+                  onSubmit={handleCreateAtendimento}
+                >
+                  <label className="dashboard-field">
+                    <span>ID da clinica</span>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="Informe a clinica do paciente"
+                      value={clinicaId}
+                      onChange={(event) => setClinicaId(event.target.value)}
+                      required
+                    />
+                  </label>
+                  <button type="submit" disabled={loadingAction}>
+                    {loadingAction ? "Processando..." : "Criar atendimento"}
+                  </button>
+                </form>
+              ) : (
+                <form
+                  className="dashboard-form"
+                  onSubmit={handleBuscarAtendimento}
+                >
+                  <label className="dashboard-field">
+                    <span>ID do atendimento</span>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="Digite o atendimento"
+                      value={atendimentoId}
+                      onChange={(event) => setAtendimentoId(event.target.value)}
+                      required
+                    />
+                  </label>
+                  <button type="submit" disabled={loadingAction}>
+                    {loadingAction ? "Buscando..." : "Buscar atendimento"}
+                  </button>
+                </form>
+              )}
+
+              {message ? (
+                <p className="dashboard-feedback dashboard-feedback--success">
+                  {message}
+                </p>
+              ) : null}
+              {error ? (
+                <p className="dashboard-feedback dashboard-feedback--error">
+                  {error}
+                </p>
+              ) : null}
             </div>
           </div>
 
           <div className="dashboard-table-card">
             <div className="table-header">
               <div>
-                <p>Protocolos recentes</p>
-                <strong>Últimos 3 registros</strong>
+                <p>
+                  {role === "medico"
+                    ? "Atendimento consultado"
+                    : "Etapa atual da triagem"}
+                </p>
+                <strong>
+                  {role === "medico"
+                    ? "Dados do backend"
+                    : "Perguntas e resultado"}
+                </strong>
               </div>
-              <button>Atualizar</button>
+              {role === "paciente" && atendimento ? (
+                <button onClick={handleRestartTriagem} disabled={loadingAction}>
+                  Reiniciar triagem
+                </button>
+              ) : null}
             </div>
 
-            <div className="protocol-table">
-              <div className="protocol-row protocol-row--head">
-                <span>ID</span>
-                <span>Protocolo</span>
-                <span>Status</span>
-                <span>Vencimento</span>
-              </div>
-              {protocolList.map((protocol) => (
-                <div key={protocol.id} className="protocol-row">
-                  <span>{protocol.id}</span>
-                  <span>{protocol.title}</span>
-                  <span
-                    className={`protocol-status protocol-status--${protocol.status.replace(/\s+/g, "-").toLowerCase()}`}
-                  >
-                    {protocol.status}
-                  </span>
-                  <span>{protocol.due}</span>
+            {atendimento ? (
+              <div className="protocol-table">
+                <div className="protocol-row protocol-row--head">
+                  <span>ID</span>
+                  <span>Status</span>
+                  <span>Risco</span>
+                  <span>Data</span>
                 </div>
-              ))}
-            </div>
+                <div className="protocol-row">
+                  <span>#{atendimento.id}</span>
+                  <span>{statusLabel(atendimento.status)}</span>
+                  <span>{riscoLabel(atendimento.classificacao_risco)}</span>
+                  <span>{formatDate(atendimento.data_atendimento)}</span>
+                </div>
+              </div>
+            ) : (
+              <p className="empty-state">Nenhum atendimento carregado ainda.</p>
+            )}
+
+            {role === "paciente" && currentQuestion ? (
+              <form className="triagem-card" onSubmit={handleAnswerQuestion}>
+                <div>
+                  <p className="triagem-step">Pergunta #{currentQuestion.id}</p>
+                  <h3>{currentQuestion.texto}</h3>
+                </div>
+
+                <div className="triagem-options">
+                  {currentQuestion.opcoes.map((opcao) => (
+                    <label key={opcao.id} className="triagem-option">
+                      <input
+                        type="radio"
+                        name="triagem_opcao"
+                        value={opcao.id}
+                        checked={selectedOptionId === String(opcao.id)}
+                        onChange={(event) =>
+                          setSelectedOptionId(event.target.value)
+                        }
+                      />
+                      <span>{opcao.texto}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loadingAction || !selectedOptionId}
+                >
+                  {loadingAction ? "Enviando..." : "Responder"}
+                </button>
+              </form>
+            ) : null}
+
+            {triagemFinalizada && triagem?.resultado ? (
+              <div className="triagem-result">
+                <p className="triagem-step">Resultado da triagem</p>
+                <h3>{triagemLabel(triagem.resultado.classificacao)}</h3>
+                <span>
+                  Pontuacao total: {triagem.resultado.pontuacao_total}
+                </span>
+              </div>
+            ) : null}
           </div>
         </section>
       </section>

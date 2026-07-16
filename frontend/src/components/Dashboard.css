@@ -176,6 +176,55 @@
   gap: 16px;
 }
 
+.dashboard-form {
+  display: grid;
+  gap: 16px;
+}
+
+.dashboard-field {
+  display: grid;
+  gap: 8px;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.dashboard-field input {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: #f8fbff;
+  color: #0f172a;
+  padding: 16px 18px;
+  outline: none;
+}
+
+.dashboard-form button {
+  width: fit-content;
+  background: #1d4ed8;
+  color: white;
+  border: 0;
+  border-radius: 16px;
+  padding: 12px 18px;
+  cursor: pointer;
+}
+
+.dashboard-feedback {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  font-weight: 600;
+}
+
+.dashboard-feedback--success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+}
+
+.dashboard-feedback--error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+}
+
 .panel-text {
   margin: 0;
   color: #475569;
@@ -208,6 +257,62 @@
   background: transparent;
   font-weight: 700;
   color: #0f172a;
+}
+
+.empty-state {
+  margin: 0;
+  color: #475569;
+}
+
+.triagem-card,
+.triagem-result {
+  margin-top: 20px;
+  padding: 24px;
+  border-radius: 24px;
+  background: #f8fbff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  display: grid;
+  gap: 18px;
+}
+
+.triagem-card h3,
+.triagem-result h3 {
+  margin: 8px 0 0;
+  color: #0f172a;
+}
+
+.triagem-step {
+  margin: 0;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.triagem-options {
+  display: grid;
+  gap: 12px;
+}
+
+.triagem-option {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: white;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.triagem-card button {
+  width: fit-content;
+  background: #1d4ed8;
+  color: white;
+  border: 0;
+  border-radius: 16px;
+  padding: 12px 18px;
+  cursor: pointer;
 }
 
 .protocol-status {

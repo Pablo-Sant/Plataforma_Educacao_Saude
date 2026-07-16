@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { loginApi, getCurrentUser } from "../services/api";
 import "./AuthScreen.css";
 
 const roles = [
@@ -8,12 +9,39 @@ const roles = [
 
 export default function AuthScreen({ onLogin }) {
   const [selectedRole, setSelectedRole] = useState("paciente");
-  const [email, setEmail] = useState("");
+  const [cpf, setCpf] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    onLogin(selectedRole);
+    setError("");
+    setLoading(true);
+
+    try {
+      const loginResponse = await loginApi({
+        username: cpf,
+        password,
+      });
+
+      localStorage.setItem("auth_token", loginResponse.access_token);
+
+      const user = await getCurrentUser();
+      const role = user.role;
+
+      if (selectedRole !== role) {
+        throw new Error(
+          "Perfil selecionado não corresponde ao usuário autenticado.",
+        );
+      }
+
+      onLogin(role, loginResponse.access_token, user);
+    } catch (submitError) {
+      setError(submitError.message || "Não foi possível autenticar.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -77,12 +105,12 @@ export default function AuthScreen({ onLogin }) {
 
           <form className="auth-form" onSubmit={handleSubmit}>
             <label className="auth-field">
-              <span>Email</span>
+              <span>CPF</span>
               <input
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                type="text"
+                placeholder="00000000000"
+                value={cpf}
+                onChange={(event) => setCpf(event.target.value)}
               />
             </label>
 
@@ -96,8 +124,10 @@ export default function AuthScreen({ onLogin }) {
               />
             </label>
 
-            <button type="submit" className="auth-submit">
-              Entrar
+            {error ? <p className="auth-error">{error}</p> : null}
+
+            <button type="submit" className="auth-submit" disabled={loading}>
+              {loading ? "Entrando..." : "Entrar"}
             </button>
           </form>
 
