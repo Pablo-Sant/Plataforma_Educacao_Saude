@@ -13,7 +13,8 @@ class ClassificacaoRiscoEnum(str, Enum):
     
     
 class StatusEnum(str, Enum):
-    AGUARDANDO = 'aguardando'
+    AGUARDANDO_TRIAGEM = 'aguardando_triagem'
+    AGUARDANDO_ATENDIMENTO = 'aguardando_atendimento'
     EM_ATENDIMENTO = 'em_atendimento'
     FINALIZADO = 'finalizado'
     
@@ -23,6 +24,7 @@ class AtendimentoModel(DBBaseModel):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     classificacao_risco = Column(SQLEnum(ClassificacaoRiscoEnum))
+    classificacao_triagem = Column(String(100))
     status = Column(SQLEnum(StatusEnum))
     descricao = Column(String(500))
     resumo_ia = Column(Text)

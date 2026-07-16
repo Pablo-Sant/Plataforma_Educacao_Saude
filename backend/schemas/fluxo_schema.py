@@ -19,6 +19,8 @@ class ClassificacaoUrgencia(str, Enum):
     HEMORRAGIA_POSSIVEL = "HEMORRAGIA_POSSIVEL"
     EMERGENCIA_CARDIACA = "EMERGENCIA_CARDIACA"
     EMERGENCIA_RESPIRATORIA = "EMERGENCIA_RESPIRATORIA"
+    RISCO_MODERADO_POR_PONTUACAO = "RISCO_MODERADO_POR_PONTUACAO"
+    RISCO_ALTO_POR_PONTUACAO = "RISCO_ALTO_POR_PONTUACAO"
 
 
 class OpcaoRespostaOut(BaseModel):
@@ -39,7 +41,7 @@ class FluxoRespostaInput(BaseModel):
 
 
 class TriagemResultado(BaseModel):
-    classificacao: ClassificacaoUrgencia
+    classificacao_triagem: ClassificacaoUrgencia
     pontuacao_total: int
 
 

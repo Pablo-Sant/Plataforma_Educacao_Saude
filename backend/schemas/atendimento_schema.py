@@ -12,7 +12,8 @@ class ClassificacaoRiscoEnum(str, Enum):
 
 
 class Status(str, Enum):
-    AGUARDANDO = 'aguardando'
+    AGUARDANDO_TRIAGEM = 'aguardando_triagem'
+    AGUARDANDO_ATENDIMENTO = 'aguardando_atendimento'
     EM_ATENDIMENTO = 'em_atendimento'
     FINALIZADO = 'finalizado'
     
@@ -23,6 +24,7 @@ class AtendimentoBase(BaseModel):
     descricao: Optional[str] = Field(None, max_length=500)
     resumo_ia: Optional[str] = None
     classificacao_risco: Optional[ClassificacaoRiscoEnum] = None    
+    classificacao_triagem: Optional[str] = None
     
        
 class AtendimentoInput(BaseModel):
