@@ -61,6 +61,20 @@ export async function getCurrentUser() {
   });
 }
 
+export async function registerUser(payload) {
+  return apiRequest("/usuarios/cadastro", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function recoverPassword(payload) {
+  return apiRequest("/usuarios/recuperar-senha", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function createAtendimento(payload) {
   return apiRequest("/atendimentos/", {
     method: "POST",

@@ -57,6 +57,12 @@ export default function Dashboard({ role, user, onLogout }) {
   const currentQuestion = triagem?.proxima_pergunta;
   const triagemFinalizada = triagem?.concluido;
 
+  async function refreshAtendimentoState(targetAtendimentoId) {
+    const atendimentoAtualizado = await getAtendimento(targetAtendimentoId);
+    setAtendimento(atendimentoAtualizado);
+    return atendimentoAtualizado;
+  }
+
   async function handleCreateAtendimento(event) {
     event.preventDefault();
     setError("");
@@ -104,6 +110,7 @@ export default function Dashboard({ role, user, onLogout }) {
       setSelectedOptionId("");
 
       if (fluxo.concluido) {
+        await refreshAtendimentoState(atendimento.id);
         setMessage("Triagem concluida com sucesso.");
       }
     } catch (requestError) {
@@ -124,6 +131,7 @@ export default function Dashboard({ role, user, onLogout }) {
 
     try {
       const fluxo = await restartTriagem(atendimento.id);
+      await refreshAtendimentoState(atendimento.id);
       setTriagem(fluxo);
       setSelectedOptionId("");
       setMessage("Triagem reiniciada.");
@@ -141,12 +149,12 @@ export default function Dashboard({ role, user, onLogout }) {
     setLoadingAction(true);
 
     try {
-      const atendimentoEncontrado = await getAtendimento(Number(atendimentoId));
-      setAtendimento(atendimentoEncontrado);
+      await refreshAtendimentoState(Number(atendimentoId));
 
       try {
         const resultado = await getTriagemResult(Number(atendimentoId));
         setTriagem({ concluido: true, resultado });
+        await refreshAtendimentoState(Number(atendimentoId));
       } catch {
         setTriagem(null);
       }
@@ -349,6 +357,13 @@ export default function Dashboard({ role, user, onLogout }) {
             ) : (
               <p className="empty-state">Nenhum atendimento carregado ainda.</p>
             )}
+
+            {atendimento?.resumo_ia ? (
+              <div className="triagem-result">
+                <p className="triagem-step">Resumo salvo no atendimento</p>
+                <span>{atendimento.resumo_ia}</span>
+              </div>
+            ) : null}
 
             {role === "paciente" && currentQuestion ? (
               <form className="triagem-card" onSubmit={handleAnswerQuestion}>
