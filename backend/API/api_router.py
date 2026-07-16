@@ -5,7 +5,8 @@ api_router = APIRouter()
 from backend.API.V1.endpoints import (
     user_route,
     fluxo_route,
-    atendimento_route
+    atendimento_route,
+    fila_route
 )
 
 api_router.include_router(
@@ -24,4 +25,10 @@ api_router.include_router(
     fluxo_route.router,
     prefix="/fluxo",
     tags=["Fluxo de Triagem"]
+)
+
+api_router.include_router(
+    fila_route.router,
+    prefix="/fila",
+    tags=["fila"]
 )
