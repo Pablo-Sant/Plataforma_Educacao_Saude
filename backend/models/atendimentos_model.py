@@ -36,3 +36,9 @@ class AtendimentoModel(DBBaseModel):
     clinica = relationship('ClinicaModel', back_populates='atendimentos')
     alerta = relationship('AlertaModel', back_populates='atendimentos', cascade='all, delete-orphan')
     respostas = relationship('RespostaModel', back_populates='atendimento', cascade='all, delete-orphan')
+    fila = relationship(
+    "FilaModel",
+    back_populates="atendimento",
+    uselist=False,
+    cascade="all, delete-orphan"
+)

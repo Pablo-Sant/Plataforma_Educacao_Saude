@@ -1,8 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-
+from backend.services.fila_service import salvar_na_fila
 from backend.models.resposta_model import RespostaModel
 from backend.models.opcao_resposta_model import OpcaoRespostaModel
+
 
 from backend.schemas.fluxo_schema import (
     TriagemResultado,
@@ -90,11 +91,15 @@ async def finalizar_triagem(db: AsyncSession, atendimento_id: int):
         classificacao = classificacao_especifica
 
     else:
-        classificacao = (
-            await classificar_por_pontuacao(
-                pontuacao_total
-            )
+        classificacao = await classificar_por_pontuacao(
+            pontuacao_total
         )
+
+    await salvar_na_fila(
+        atendimento_id=atendimento_id,
+        classificacao=classificacao,
+        pontuacao=pontuacao_total
+    )
 
     return TriagemResultado(
         classificacao=classificacao,
