@@ -25,7 +25,7 @@ async def autenticar(cpf: str, senha: str, db: AsyncSession) -> Optional[UserMod
     if not usuario:
         raise UsuarioNaoCadastrado
     
-    if not verificar_senha(senha, usuario.senha):
+    if not verificar_senha(senha, usuario.senha_hash):
         raise EmailOuSenhaIncorretos
     
     return usuario
@@ -55,6 +55,6 @@ def criar_token_acesso(sub: str) -> str:
     """
     return _criar_token(
         tipo_token='acess_token',
-        tempo_vida=timedelta(minutes=settings.ACESS_TOKEN_EXPIRE_MINUTES),
+        tempo_vida=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         sub=sub
     )
