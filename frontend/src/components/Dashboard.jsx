@@ -8,6 +8,34 @@ import {
 } from "../services/api";
 import "./Dashboard.css";
 
+function readStoredProfiles() {
+  try {
+    const raw = localStorage.getItem("auth_profiles");
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function readStoredAtendimentoPatients() {
+  try {
+    const raw = localStorage.getItem("atendimento_patient_names");
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function persistAtendimentoPatientName(atendimentoId, patientName) {
+  if (!atendimentoId || !patientName) {
+    return;
+  }
+
+  const current = readStoredAtendimentoPatients();
+  current[String(atendimentoId)] = patientName;
+  localStorage.setItem("atendimento_patient_names", JSON.stringify(current));
+}
+
 function formatDate(dateValue) {
   if (!dateValue) {
     return "--";
@@ -74,6 +102,7 @@ export default function Dashboard({ role, user, onLogout }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loadingAction, setLoadingAction] = useState(false);
+  const [triagemIndisponivel, setTriagemIndisponivel] = useState(false);
 
   const currentQuestion = triagem?.proxima_pergunta;
   const triagemFinalizada = triagem?.concluido;
@@ -81,11 +110,24 @@ export default function Dashboard({ role, user, onLogout }) {
     role === "paciente" && triagem && !triagemFinalizada;
   const classificacaoTriagemExibida = ocultarResultadoPersistido
     ? null
-    : atendimento?.classificacao_triagem || triagem?.resultado?.classificacao_triagem;
+    : atendimento?.classificacao_triagem ||
+      triagem?.resultado?.classificacao_triagem;
   const classificacaoRiscoExibida = ocultarResultadoPersistido
     ? null
     : atendimento?.classificacao_risco;
-  const resumoIaExibido = ocultarResultadoPersistido ? null : atendimento?.resumo_ia;
+  const resumoIaExibido = ocultarResultadoPersistido
+    ? null
+    : atendimento?.resumo_ia;
+  const storedProfiles = readStoredProfiles();
+  const storedAtendimentoPatients = readStoredAtendimentoPatients();
+  const pacientePerfil =
+    Object.values(storedProfiles).find(
+      (profile) => Number(profile?.id) === Number(atendimento?.paciente_id),
+    ) || null;
+  const pacienteNomeExibido =
+    storedAtendimentoPatients[String(atendimento?.id)] ||
+    pacientePerfil?.nome ||
+    (atendimento?.paciente_id ? `Paciente #${atendimento.paciente_id}` : "--");
 
   async function refreshAtendimentoState(targetAtendimentoId) {
     const atendimentoAtualizado = await getAtendimento(targetAtendimentoId);
@@ -98,6 +140,7 @@ export default function Dashboard({ role, user, onLogout }) {
     setError("");
     setMessage("");
     setLoadingAction(true);
+    setTriagemIndisponivel(false);
 
     try {
       const created = await createAtendimento({
@@ -105,6 +148,7 @@ export default function Dashboard({ role, user, onLogout }) {
         paciente_id: user.id,
       });
 
+      persistAtendimentoPatientName(created.id, user?.nome || "Paciente");
       setAtendimento(created);
       setAtendimentoId(String(created.id));
       setMessage(`Atendimento #${created.id} criado com sucesso.`);
@@ -116,6 +160,7 @@ export default function Dashboard({ role, user, onLogout }) {
         setMessage(`Atendimento #${created.id} criado e triagem iniciada.`);
       } catch (triagemError) {
         setTriagem(null);
+        setTriagemIndisponivel(true);
         setError(triagemError.message);
       }
     } catch (requestError) {
@@ -135,6 +180,7 @@ export default function Dashboard({ role, user, onLogout }) {
     setError("");
     setMessage("");
     setLoadingAction(true);
+    setTriagemIndisponivel(false);
 
     try {
       const fluxo = await answerTriagem(atendimento.id, {
@@ -164,6 +210,7 @@ export default function Dashboard({ role, user, onLogout }) {
     setError("");
     setMessage("");
     setLoadingAction(true);
+    setTriagemIndisponivel(false);
 
     try {
       const fluxo = await restartTriagem(atendimento.id);
@@ -172,6 +219,7 @@ export default function Dashboard({ role, user, onLogout }) {
       setSelectedOptionId("");
       setMessage("Triagem reiniciada.");
     } catch (requestError) {
+      setTriagemIndisponivel(true);
       setError(requestError.message || "Nao foi possivel reiniciar a triagem.");
     } finally {
       setLoadingAction(false);
@@ -183,6 +231,7 @@ export default function Dashboard({ role, user, onLogout }) {
     setError("");
     setMessage("");
     setLoadingAction(true);
+    setTriagemIndisponivel(false);
 
     try {
       await refreshAtendimentoState(Number(atendimentoId));
@@ -224,12 +273,8 @@ export default function Dashboard({ role, user, onLogout }) {
       <section className="dashboard-grid">
         <aside className="dashboard-summary">
           <div className="summary-card summary-card--focus">
-            <p className="summary-label">Usuario autenticado</p>
-            <strong>{user?.cpf || "--"}</strong>
-            <p className="summary-note">
-              Os dados desta tela agora sao carregados e enviados para a API do
-              backend.
-            </p>
+            <p className="summary-label">Usuário autenticado</p>
+            <strong>{user?.nome || "--"}</strong>
           </div>
 
           <div className="summary-card">
@@ -257,10 +302,16 @@ export default function Dashboard({ role, user, onLogout }) {
           <div className="dashboard-cards">
             <article className="dashboard-card">
               <p>{role === "medico" ? "ID do atendimento" : "ID do usuario"}</p>
-              <strong>{role === "medico" ? atendimento?.id || "--" : user?.id || "--"}</strong>
+              <strong>
+                {role === "medico" ? atendimento?.id || "--" : user?.id || "--"}
+              </strong>
             </article>
             <article className="dashboard-card">
-              <p>{role === "medico" ? "Classificacao da triagem" : "Risco do atendimento"}</p>
+              <p>
+                {role === "medico"
+                  ? "Classificacao da triagem"
+                  : "Risco do atendimento"}
+              </p>
               <strong>
                 {role === "medico"
                   ? triagemLabel(classificacaoTriagemExibida)
@@ -272,7 +323,11 @@ export default function Dashboard({ role, user, onLogout }) {
               <strong>{riscoLabel(classificacaoRiscoExibida)}</strong>
               {role !== "medico" ? (
                 <strong>
-                  {triagemStatusLabel(atendimento, triagemFinalizada, currentQuestion)}
+                  {triagemStatusLabel(
+                    atendimento,
+                    triagemFinalizada,
+                    currentQuestion,
+                  )}
                 </strong>
               ) : null}
             </article>
@@ -288,7 +343,7 @@ export default function Dashboard({ role, user, onLogout }) {
                 </span>
                 <h2>
                   {role === "medico"
-                    ? "Consultar dados reais da API"
+                    ? "Consultar atendimento e triagem"
                     : "Criar atendimento e iniciar triagem"}
                 </h2>
               </div>
@@ -393,9 +448,17 @@ export default function Dashboard({ role, user, onLogout }) {
             {role === "medico" && atendimento ? (
               <div className="triagem-result">
                 <p className="triagem-step">Leitura clinica do atendimento</p>
-                <span>Classificacao da triagem: {triagemLabel(classificacaoTriagemExibida)}</span>
-                <span>Paciente: #{atendimento.paciente_id || "--"}</span>
-                <span>Medico vinculado: {atendimento.medico_id ? `#${atendimento.medico_id}` : "Nao vinculado"}</span>
+                <span>
+                  Classificacao da triagem:{" "}
+                  {triagemLabel(classificacaoTriagemExibida)}
+                </span>
+                <span>Paciente: {pacienteNomeExibido}</span>
+                <span>
+                  Medico vinculado:{" "}
+                  {atendimento.medico_id
+                    ? `#${atendimento.medico_id}`
+                    : "Nao vinculado"}
+                </span>
               </div>
             ) : null}
 
@@ -408,14 +471,16 @@ export default function Dashboard({ role, user, onLogout }) {
 
             {role === "paciente" &&
             atendimento &&
+            triagemIndisponivel &&
             !currentQuestion &&
-            !triagemFinalizada &&
-            !resumoIaExibido ? (
+            !triagemFinalizada ? (
               <div className="triagem-result">
-                <p className="triagem-step">Triagem indisponivel</p>
+                <p className="triagem-step">
+                  Triagem indisponivel neste ambiente
+                </p>
                 <span>
-                  O atendimento foi criado, mas o backend nao conseguiu iniciar o
-                  fluxo de perguntas.
+                  O atendimento foi criado, mas o backend nao encontrou a
+                  pergunta inicial do fluxo para abrir a triagem.
                 </span>
               </div>
             ) : null}

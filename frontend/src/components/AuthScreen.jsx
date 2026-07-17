@@ -11,6 +11,31 @@ function onlyDigits(value) {
   return value.replace(/\D/g, "");
 }
 
+function readStoredProfiles() {
+  try {
+    const raw = localStorage.getItem("auth_profiles");
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function persistStoredProfile(profile) {
+  if (!profile?.cpf) {
+    return;
+  }
+
+  const profiles = readStoredProfiles();
+  profiles[profile.cpf] = {
+    id: profile.id || profiles[profile.cpf]?.id || null,
+    cpf: profile.cpf,
+    nome: profile.nome || "",
+    email: profile.email || null,
+    role: profile.role || null,
+  };
+  localStorage.setItem("auth_profiles", JSON.stringify(profiles));
+}
+
 export default function AuthScreen({ onLogin }) {
   const [mode, setMode] = useState("login");
   const [selectedRole, setSelectedRole] = useState("paciente");
@@ -70,13 +95,20 @@ export default function AuthScreen({ onLogin }) {
         throw new Error("Token de autenticacao invalido.");
       }
 
-      onLogin(selectedRole, loginResponse.access_token, {
+      const normalizedCpf = onlyDigits(cpf);
+      const storedProfiles = readStoredProfiles();
+      const storedProfile = storedProfiles[normalizedCpf] || {};
+      const currentUser = {
         id: Number(tokenPayload.sub),
-        cpf: onlyDigits(cpf),
-        nome: `Usuario ${selectedRole}`,
-        email: null,
-        role: selectedRole,
-      });
+        cpf: normalizedCpf,
+        nome: storedProfile.nome || `Usuario ${selectedRole}`,
+        email: storedProfile.email || null,
+        role: storedProfile.role || selectedRole,
+      };
+
+      persistStoredProfile(currentUser);
+
+      onLogin(selectedRole, loginResponse.access_token, currentUser);
     } catch (submitError) {
       setError(submitError.message || "Nao foi possivel autenticar.");
     } finally {
@@ -107,11 +139,19 @@ export default function AuthScreen({ onLogin }) {
         payload.crm = registerForm.crm;
       }
 
-      await registerUser(payload);
+      const registeredUser = await registerUser(payload);
+
+      persistStoredProfile({
+        id: registeredUser?.id || null,
+        cpf: payload.cpf,
+        nome: registeredUser?.nome || payload.nome,
+        email: registeredUser?.email || payload.email || null,
+        role: registeredUser?.role || payload.role,
+      });
 
       setCpf(payload.cpf);
       setPassword(payload.senha);
-      setSuccess("Cadastro realizado com sucesso. Agora voce pode entrar.");
+      setSuccess("Cadastro realizado com sucesso.");
       setRegisterForm({
         nome: "",
         email: "",
@@ -136,22 +176,22 @@ export default function AuthScreen({ onLogin }) {
         <div className="auth-panel auth-panel--info">
           <div className="auth-brand">
             <span className="auth-brand__tag">Sistema de Protocolos</span>
-            <h1 className="auth-brand__title">Gestao de informacoes</h1>
+            <h1 className="auth-brand__title">Gestão de informações</h1>
           </div>
 
           <p className="auth-copy">
             Para Pacientes
             <span>
-              Realize sua triagem de sintomas de forma rapida e receba orientacoes
-              personalizadas sobre sua condicao.
+              Realize sua triagem de sintomas de forma rápida e receba
+              orientações personalizadas sobre sua condição.
             </span>
           </p>
 
           <p className="auth-copy">
             Para Medicos
             <span>
-              Acesse relatorios completos de triagem, visualize protocolos
-              sugeridos e gerencie atendimentos com eficiencia.
+              Acesse relatórios completos de triagem, visualize protocolos
+              sugeridos e gerencie atendimentos com eficiência.
             </span>
           </p>
 
@@ -162,7 +202,7 @@ export default function AuthScreen({ onLogin }) {
             </div>
             <div>
               <strong>3 minutos</strong>
-              <small>para comecar</small>
+              <small>para começar</small>
             </div>
           </div>
         </div>
@@ -249,7 +289,9 @@ export default function AuthScreen({ onLogin }) {
                   <input
                     type="text"
                     value={registerForm.nome}
-                    onChange={(event) => updateRegisterField("nome", event.target.value)}
+                    onChange={(event) =>
+                      updateRegisterField("nome", event.target.value)
+                    }
                     required
                   />
                 </label>
@@ -259,7 +301,9 @@ export default function AuthScreen({ onLogin }) {
                   <input
                     type="email"
                     value={registerForm.email}
-                    onChange={(event) => updateRegisterField("email", event.target.value)}
+                    onChange={(event) =>
+                      updateRegisterField("email", event.target.value)
+                    }
                   />
                 </label>
 
@@ -268,7 +312,9 @@ export default function AuthScreen({ onLogin }) {
                   <input
                     type="text"
                     value={registerForm.telefone}
-                    onChange={(event) => updateRegisterField("telefone", event.target.value)}
+                    onChange={(event) =>
+                      updateRegisterField("telefone", event.target.value)
+                    }
                     required
                   />
                 </label>
@@ -278,7 +324,9 @@ export default function AuthScreen({ onLogin }) {
                   <input
                     type="text"
                     value={registerForm.cpf}
-                    onChange={(event) => updateRegisterField("cpf", event.target.value)}
+                    onChange={(event) =>
+                      updateRegisterField("cpf", event.target.value)
+                    }
                     required
                   />
                 </label>
@@ -288,7 +336,9 @@ export default function AuthScreen({ onLogin }) {
                   <input
                     type="password"
                     value={registerForm.senha}
-                    onChange={(event) => updateRegisterField("senha", event.target.value)}
+                    onChange={(event) =>
+                      updateRegisterField("senha", event.target.value)
+                    }
                     required
                   />
                 </label>
@@ -299,7 +349,9 @@ export default function AuthScreen({ onLogin }) {
                     type="number"
                     min="1"
                     value={registerForm.clinicaId}
-                    onChange={(event) => updateRegisterField("clinicaId", event.target.value)}
+                    onChange={(event) =>
+                      updateRegisterField("clinicaId", event.target.value)
+                    }
                     required
                   />
                 </label>
@@ -311,7 +363,9 @@ export default function AuthScreen({ onLogin }) {
                       type="number"
                       min="0"
                       value={registerForm.idade}
-                      onChange={(event) => updateRegisterField("idade", event.target.value)}
+                      onChange={(event) =>
+                        updateRegisterField("idade", event.target.value)
+                      }
                       required
                     />
                   </label>
@@ -321,7 +375,9 @@ export default function AuthScreen({ onLogin }) {
                     <input
                       type="text"
                       value={registerForm.crm}
-                      onChange={(event) => updateRegisterField("crm", event.target.value)}
+                      onChange={(event) =>
+                        updateRegisterField("crm", event.target.value)
+                      }
                       required
                     />
                   </label>
@@ -338,12 +394,13 @@ export default function AuthScreen({ onLogin }) {
           )}
 
           <div className="auth-footer auth-footer--actions">
-            <button type="button" className="auth-link" onClick={() => switchMode("register")}>
+            <button
+              type="button"
+              className="auth-link"
+              onClick={() => switchMode("register")}
+            >
               Criar conta
             </button>
-            <span className="auth-note">
-              Recuperacao de senha indisponivel na API atual.
-            </span>
           </div>
         </div>
       </section>

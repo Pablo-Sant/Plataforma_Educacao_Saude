@@ -47,10 +47,18 @@ function buildHeaders(headers = {}, isFormUrlEncoded = false) {
 }
 
 async function apiRequest(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: buildHeaders(options.headers, options.isFormUrlEncoded),
-  });
+  let response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers: buildHeaders(options.headers, options.isFormUrlEncoded),
+    });
+  } catch {
+    throw new Error(
+      "Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.",
+    );
+  }
 
   if (response.status === 204) {
     return null;
@@ -62,9 +70,27 @@ async function apiRequest(path, options = {}) {
     : await response.text();
 
   if (!response.ok) {
+    if (response.status >= 500 && path === "/usuarios/cadastro") {
+      throw new Error(
+        "O backend falhou ao concluir o cadastro. Se o perfil for medico, verifique se o backend esta consistente entre os campos crm/crn.",
+      );
+    }
+
+    if (response.status >= 500 && path.includes("/fluxo/") && path.endsWith("/iniciar")) {
+      throw new Error(
+        "A triagem nao pode ser iniciada porque o backend nao encontrou a pergunta inicial do fluxo. O atendimento foi criado, mas o banco precisa ter as perguntas e opcoes carregadas.",
+      );
+    }
+
+    if (response.status >= 500 && path.includes("/fluxo/") && path.endsWith("/reiniciar")) {
+      throw new Error(
+        "A triagem nao pode ser reiniciada porque o backend nao encontrou a pergunta inicial do fluxo. O atendimento continua salvo.",
+      );
+    }
+
     if (response.status >= 500 && path.includes("/fluxo/")) {
       throw new Error(
-        "A triagem nao esta configurada no backend. Verifique se as perguntas e opcoes foram carregadas no banco local.",
+        "A triagem nao esta configurada corretamente no backend para este ambiente.",
       );
     }
 

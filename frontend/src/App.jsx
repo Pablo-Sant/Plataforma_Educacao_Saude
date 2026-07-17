@@ -4,6 +4,15 @@ import Dashboard from "./components/Dashboard";
 import { parseTokenPayload } from "./services/api";
 import "./App.css";
 
+function readStoredProfiles() {
+  try {
+    const raw = localStorage.getItem("auth_profiles");
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
 function App() {
   const [userRole, setUserRole] = useState(null);
   const [user, setUser] = useState(null);
@@ -28,12 +37,16 @@ function App() {
     }
 
     const persistedSession = session ? JSON.parse(session) : {};
+    const storedProfiles = readStoredProfiles();
+    const storedProfile = persistedSession.cpf
+      ? storedProfiles[persistedSession.cpf] || {}
+      : {};
     const restoredUser = {
       id: Number(payload.sub),
-      cpf: persistedSession.cpf || "",
-      nome: persistedSession.nome || "Usuario",
-      email: persistedSession.email || null,
-      role: persistedSession.role || null,
+      cpf: persistedSession.cpf || storedProfile.cpf || "",
+      nome: persistedSession.nome || storedProfile.nome || "Usuario",
+      email: persistedSession.email || storedProfile.email || null,
+      role: persistedSession.role || storedProfile.role || null,
     };
 
     setUserRole(restoredUser.role);
