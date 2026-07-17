@@ -1,6 +1,35 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
+function formatApiError(payload) {
+  if (!payload) {
+    return "Erro ao consultar a API.";
+  }
+
+  if (typeof payload === "string") {
+    return payload;
+  }
+
+  if (Array.isArray(payload?.detail)) {
+    return payload.detail
+      .map((item) => {
+        if (typeof item === "string") {
+          return item;
+        }
+
+        const field = Array.isArray(item?.loc) ? item.loc.at(-1) : "campo";
+        return `${field}: ${item?.msg || "valor invalido"}`;
+      })
+      .join(" | ");
+  }
+
+  if (typeof payload?.detail === "string") {
+    return payload.detail;
+  }
+
+  return "Erro ao consultar a API.";
+}
+
 function buildHeaders(headers = {}, isFormUrlEncoded = false) {
   const finalHeaders = { ...headers };
 
@@ -33,7 +62,13 @@ async function apiRequest(path, options = {}) {
     : await response.text();
 
   if (!response.ok) {
-    throw new Error(payload?.detail || payload || "Erro ao consultar a API.");
+    if (response.status >= 500 && path.includes("/fluxo/")) {
+      throw new Error(
+        "A triagem nao esta configurada no backend. Verifique se as perguntas e opcoes foram carregadas no banco local.",
+      );
+    }
+
+    throw new Error(formatApiError(payload));
   }
 
   return payload;
@@ -63,13 +98,6 @@ export async function getCurrentUser() {
 
 export async function registerUser(payload) {
   return apiRequest("/usuarios/cadastro", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function recoverPassword(payload) {
-  return apiRequest("/usuarios/recuperar-senha", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -111,4 +139,23 @@ export async function getTriagemResult(atendimentoId) {
   return apiRequest(`/fluxo/${atendimentoId}/resultado`, {
     method: "GET",
   });
+}
+
+export function parseTokenPayload(token) {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) {
+      return null;
+    }
+
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = atob(normalized);
+    return JSON.parse(decoded);
+  } catch {
+    return null;
+  }
 }

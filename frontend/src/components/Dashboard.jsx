@@ -3,7 +3,6 @@ import {
   answerTriagem,
   createAtendimento,
   getAtendimento,
-  getTriagemResult,
   restartTriagem,
   startTriagem,
 } from "../services/api";
@@ -23,6 +22,8 @@ function formatDate(dateValue) {
 function statusLabel(status) {
   const labels = {
     aguardando: "Aguardando",
+    aguardando_triagem: "Aguardando triagem",
+    aguardando_atendimento: "Aguardando atendimento",
     em_atendimento: "Em atendimento",
     finalizado: "Finalizado",
   };
@@ -44,6 +45,26 @@ function triagemLabel(classificacao) {
   return classificacao ? classificacao.replaceAll("_", " ") : "--";
 }
 
+function triagemStatusLabel(atendimento, triagemFinalizada, currentQuestion) {
+  if (currentQuestion) {
+    return "Em andamento";
+  }
+
+  if (triagemFinalizada) {
+    return "Concluida";
+  }
+
+  if (atendimento?.status === "aguardando_triagem") {
+    return "Pendente";
+  }
+
+  if (atendimento?.classificacao_triagem) {
+    return "Concluida";
+  }
+
+  return "Aguardando";
+}
+
 export default function Dashboard({ role, user, onLogout }) {
   const [clinicaId, setClinicaId] = useState("");
   const [atendimentoId, setAtendimentoId] = useState("");
@@ -56,6 +77,15 @@ export default function Dashboard({ role, user, onLogout }) {
 
   const currentQuestion = triagem?.proxima_pergunta;
   const triagemFinalizada = triagem?.concluido;
+  const ocultarResultadoPersistido =
+    role === "paciente" && triagem && !triagemFinalizada;
+  const classificacaoTriagemExibida = ocultarResultadoPersistido
+    ? null
+    : atendimento?.classificacao_triagem || triagem?.resultado?.classificacao_triagem;
+  const classificacaoRiscoExibida = ocultarResultadoPersistido
+    ? null
+    : atendimento?.classificacao_risco;
+  const resumoIaExibido = ocultarResultadoPersistido ? null : atendimento?.resumo_ia;
 
   async function refreshAtendimentoState(targetAtendimentoId) {
     const atendimentoAtualizado = await getAtendimento(targetAtendimentoId);
@@ -79,9 +109,15 @@ export default function Dashboard({ role, user, onLogout }) {
       setAtendimentoId(String(created.id));
       setMessage(`Atendimento #${created.id} criado com sucesso.`);
 
-      const fluxo = await startTriagem(created.id);
-      setTriagem(fluxo);
-      setSelectedOptionId("");
+      try {
+        const fluxo = await startTriagem(created.id);
+        setTriagem(fluxo);
+        setSelectedOptionId("");
+        setMessage(`Atendimento #${created.id} criado e triagem iniciada.`);
+      } catch (triagemError) {
+        setTriagem(null);
+        setError(triagemError.message);
+      }
     } catch (requestError) {
       setError(requestError.message || "Nao foi possivel criar o atendimento.");
     } finally {
@@ -150,14 +186,7 @@ export default function Dashboard({ role, user, onLogout }) {
 
     try {
       await refreshAtendimentoState(Number(atendimentoId));
-
-      try {
-        const resultado = await getTriagemResult(Number(atendimentoId));
-        setTriagem({ concluido: true, resultado });
-        await refreshAtendimentoState(Number(atendimentoId));
-      } catch {
-        setTriagem(null);
-      }
+      setTriagem(null);
 
       setMessage(`Atendimento #${atendimentoId} carregado.`);
     } catch (requestError) {
@@ -227,22 +256,25 @@ export default function Dashboard({ role, user, onLogout }) {
         <section className="dashboard-main">
           <div className="dashboard-cards">
             <article className="dashboard-card">
-              <p>ID do usuario</p>
-              <strong>{user?.id || "--"}</strong>
+              <p>{role === "medico" ? "ID do atendimento" : "ID do usuario"}</p>
+              <strong>{role === "medico" ? atendimento?.id || "--" : user?.id || "--"}</strong>
             </article>
             <article className="dashboard-card">
-              <p>Risco do atendimento</p>
-              <strong>{riscoLabel(atendimento?.classificacao_risco)}</strong>
-            </article>
-            <article className="dashboard-card">
-              <p>Triagem</p>
+              <p>{role === "medico" ? "Classificacao da triagem" : "Risco do atendimento"}</p>
               <strong>
-                {triagemFinalizada
-                  ? "Concluida"
-                  : currentQuestion
-                    ? "Em andamento"
-                    : "Aguardando"}
+                {role === "medico"
+                  ? triagemLabel(classificacaoTriagemExibida)
+                  : riscoLabel(classificacaoRiscoExibida)}
               </strong>
+            </article>
+            <article className="dashboard-card">
+              <p>{role === "medico" ? "Risco persistido" : "Triagem"}</p>
+              <strong>{riscoLabel(classificacaoRiscoExibida)}</strong>
+              {role !== "medico" ? (
+                <strong>
+                  {triagemStatusLabel(atendimento, triagemFinalizada, currentQuestion)}
+                </strong>
+              ) : null}
             </article>
           </div>
 
@@ -350,7 +382,7 @@ export default function Dashboard({ role, user, onLogout }) {
                 <div className="protocol-row">
                   <span>#{atendimento.id}</span>
                   <span>{statusLabel(atendimento.status)}</span>
-                  <span>{riscoLabel(atendimento.classificacao_risco)}</span>
+                  <span>{riscoLabel(classificacaoRiscoExibida)}</span>
                   <span>{formatDate(atendimento.data_atendimento)}</span>
                 </div>
               </div>
@@ -358,10 +390,33 @@ export default function Dashboard({ role, user, onLogout }) {
               <p className="empty-state">Nenhum atendimento carregado ainda.</p>
             )}
 
-            {atendimento?.resumo_ia ? (
+            {role === "medico" && atendimento ? (
+              <div className="triagem-result">
+                <p className="triagem-step">Leitura clinica do atendimento</p>
+                <span>Classificacao da triagem: {triagemLabel(classificacaoTriagemExibida)}</span>
+                <span>Paciente: #{atendimento.paciente_id || "--"}</span>
+                <span>Medico vinculado: {atendimento.medico_id ? `#${atendimento.medico_id}` : "Nao vinculado"}</span>
+              </div>
+            ) : null}
+
+            {resumoIaExibido ? (
               <div className="triagem-result">
                 <p className="triagem-step">Resumo salvo no atendimento</p>
-                <span>{atendimento.resumo_ia}</span>
+                <span>{resumoIaExibido}</span>
+              </div>
+            ) : null}
+
+            {role === "paciente" &&
+            atendimento &&
+            !currentQuestion &&
+            !triagemFinalizada &&
+            !resumoIaExibido ? (
+              <div className="triagem-result">
+                <p className="triagem-step">Triagem indisponivel</p>
+                <span>
+                  O atendimento foi criado, mas o backend nao conseguiu iniciar o
+                  fluxo de perguntas.
+                </span>
               </div>
             ) : null}
 
@@ -401,7 +456,7 @@ export default function Dashboard({ role, user, onLogout }) {
             {triagemFinalizada && triagem?.resultado ? (
               <div className="triagem-result">
                 <p className="triagem-step">Resultado da triagem</p>
-                <h3>{triagemLabel(triagem.resultado.classificacao)}</h3>
+                <h3>{triagemLabel(triagem.resultado.classificacao_triagem)}</h3>
                 <span>
                   Pontuacao total: {triagem.resultado.pontuacao_total}
                 </span>
