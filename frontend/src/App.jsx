@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import AuthScreen from "./components/AuthScreen";
 import Dashboard from "./components/Dashboard";
-import { getCurrentUser } from "./services/api";
+import { parseTokenPayload } from "./services/api";
 import "./App.css";
 
 function App() {
@@ -11,33 +11,46 @@ function App() {
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
+    const session = localStorage.getItem("auth_session");
 
     if (!token) {
       setLoading(false);
       return;
     }
 
-    getCurrentUser()
-      .then((currentUser) => {
-        setUserRole(currentUser.role);
-        setUser(currentUser);
-      })
-      .catch(() => {
-        localStorage.removeItem("auth_token");
-        setUserRole(null);
-        setUser(null);
-      })
-      .finally(() => setLoading(false));
+    const payload = parseTokenPayload(token);
+
+    if (!payload?.sub) {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_session");
+      setLoading(false);
+      return;
+    }
+
+    const persistedSession = session ? JSON.parse(session) : {};
+    const restoredUser = {
+      id: Number(payload.sub),
+      cpf: persistedSession.cpf || "",
+      nome: persistedSession.nome || "Usuario",
+      email: persistedSession.email || null,
+      role: persistedSession.role || null,
+    };
+
+    setUserRole(restoredUser.role);
+    setUser(restoredUser);
+    setLoading(false);
   }, []);
 
   const handleLogin = (role, token, currentUser) => {
     localStorage.setItem("auth_token", token);
+    localStorage.setItem("auth_session", JSON.stringify(currentUser || {}));
     setUserRole(role);
     setUser(currentUser || null);
   };
 
   const handleLogout = () => {
     localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_session");
     setUserRole(null);
     setUser(null);
   };

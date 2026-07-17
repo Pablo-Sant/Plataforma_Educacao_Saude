@@ -1,10 +1,5 @@
 import { useState } from "react";
-import {
-  getCurrentUser,
-  loginApi,
-  recoverPassword,
-  registerUser,
-} from "../services/api";
+import { loginApi, parseTokenPayload, registerUser } from "../services/api";
 import "./AuthScreen.css";
 
 const roles = [
@@ -12,54 +7,38 @@ const roles = [
   { id: "medico", label: "Medico" },
 ];
 
-const authModes = {
-  login: {
-    title: "Bem-vindo!",
-    subtitle: "Entre com suas credenciais para continuar.",
-    submitLabel: "Entrar",
-  },
-  register: {
-    title: "Criar conta",
-    subtitle: "Cadastre um perfil para acessar a plataforma.",
-    submitLabel: "Cadastrar",
-  },
-  recover: {
-    title: "Recuperar senha",
-    subtitle: "Confirme seus dados para definir uma nova senha.",
-    submitLabel: "Atualizar senha",
-  },
-};
+function onlyDigits(value) {
+  return value.replace(/\D/g, "");
+}
 
-function emptyRegisterForm(role) {
-  return {
+export default function AuthScreen({ onLogin }) {
+  const [mode, setMode] = useState("login");
+  const [selectedRole, setSelectedRole] = useState("paciente");
+  const [cpf, setCpf] = useState("");
+  const [password, setPassword] = useState("");
+  const [registerForm, setRegisterForm] = useState({
     nome: "",
     email: "",
     telefone: "",
     cpf: "",
     senha: "",
     clinicaId: "",
-    idade: role === "paciente" ? "" : "",
-    crm: role === "medico" ? "" : "",
-  };
-}
-
-export default function AuthScreen({ onLogin }) {
-  const [authMode, setAuthMode] = useState("login");
-  const [selectedRole, setSelectedRole] = useState("paciente");
-  const [cpf, setCpf] = useState("");
-  const [password, setPassword] = useState("");
-  const [registerForm, setRegisterForm] = useState(emptyRegisterForm("paciente"));
-  const [recoverForm, setRecoverForm] = useState({
-    cpf: "",
-    email: "",
-    novaSenha: "",
+    idade: "",
+    crm: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function switchMode(mode) {
-    setAuthMode(mode);
+  function updateRegisterField(field, value) {
+    setRegisterForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  function switchMode(nextMode) {
+    setMode(nextMode);
     setError("");
     setSuccess("");
   }
@@ -81,20 +60,23 @@ export default function AuthScreen({ onLogin }) {
 
     try {
       const loginResponse = await loginApi({
-        username: cpf,
+        username: onlyDigits(cpf),
         password,
       });
 
-      localStorage.setItem("auth_token", loginResponse.access_token);
+      const tokenPayload = parseTokenPayload(loginResponse.access_token);
 
-      const user = await getCurrentUser();
-      const role = user.role;
-
-      if (selectedRole !== role) {
-        throw new Error("Perfil selecionado nao corresponde ao usuario autenticado.");
+      if (!tokenPayload?.sub) {
+        throw new Error("Token de autenticacao invalido.");
       }
 
-      onLogin(role, loginResponse.access_token, user);
+      onLogin(selectedRole, loginResponse.access_token, {
+        id: Number(tokenPayload.sub),
+        cpf: onlyDigits(cpf),
+        nome: `Usuario ${selectedRole}`,
+        email: null,
+        role: selectedRole,
+      });
     } catch (submitError) {
       setError(submitError.message || "Nao foi possivel autenticar.");
     } finally {
@@ -112,8 +94,8 @@ export default function AuthScreen({ onLogin }) {
       const payload = {
         nome: registerForm.nome,
         email: registerForm.email || null,
-        telefone: registerForm.telefone,
-        cpf: registerForm.cpf,
+        telefone: onlyDigits(registerForm.telefone),
+        cpf: onlyDigits(registerForm.cpf),
         senha: registerForm.senha,
         role: selectedRole,
         clinica_id: Number(registerForm.clinicaId),
@@ -126,48 +108,27 @@ export default function AuthScreen({ onLogin }) {
       }
 
       await registerUser(payload);
-      setSuccess("Cadastro realizado com sucesso. Agora voce ja pode entrar.");
-      setRegisterForm(emptyRegisterForm(selectedRole));
+
       setCpf(payload.cpf);
       setPassword(payload.senha);
-      setAuthMode("login");
+      setSuccess("Cadastro realizado com sucesso. Agora voce pode entrar.");
+      setRegisterForm({
+        nome: "",
+        email: "",
+        telefone: "",
+        cpf: "",
+        senha: "",
+        clinicaId: "",
+        idade: "",
+        crm: "",
+      });
+      setMode("login");
     } catch (submitError) {
       setError(submitError.message || "Nao foi possivel concluir o cadastro.");
     } finally {
       setLoading(false);
     }
   }
-
-  async function handleRecoverSubmit(event) {
-    event.preventDefault();
-    setError("");
-    setSuccess("");
-    setLoading(true);
-
-    try {
-      await recoverPassword({
-        cpf: recoverForm.cpf,
-        email: recoverForm.email,
-        nova_senha: recoverForm.novaSenha,
-      });
-
-      setSuccess("Senha atualizada com sucesso. Voce ja pode entrar com a nova senha.");
-      setCpf(recoverForm.cpf);
-      setPassword(recoverForm.novaSenha);
-      setRecoverForm({
-        cpf: "",
-        email: "",
-        novaSenha: "",
-      });
-      setAuthMode("login");
-    } catch (submitError) {
-      setError(submitError.message || "Nao foi possivel atualizar a senha.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const modeContent = authModes[authMode];
 
   return (
     <main className="auth-page">
@@ -208,31 +169,30 @@ export default function AuthScreen({ onLogin }) {
 
         <div className="auth-panel auth-panel--form">
           <div className="auth-header">
-            <p className="auth-hello">{modeContent.title}</p>
-            <p className="auth-subtitle">{modeContent.subtitle}</p>
+            <p className="auth-hello">
+              {mode === "login" ? "Bem-vindo!" : "Criar conta"}
+            </p>
+            <p className="auth-subtitle">
+              {mode === "login"
+                ? "Entre com suas credenciais para continuar."
+                : "Cadastre um perfil usando os campos aceitos pela API atual."}
+            </p>
           </div>
 
           <div className="auth-mode-toggle" role="tablist">
             <button
               type="button"
-              className={`auth-mode ${authMode === "login" ? "active" : ""}`}
+              className={`auth-mode ${mode === "login" ? "active" : ""}`}
               onClick={() => switchMode("login")}
             >
               Entrar
             </button>
             <button
               type="button"
-              className={`auth-mode ${authMode === "register" ? "active" : ""}`}
+              className={`auth-mode ${mode === "register" ? "active" : ""}`}
               onClick={() => switchMode("register")}
             >
               Cadastro
-            </button>
-            <button
-              type="button"
-              className={`auth-mode ${authMode === "recover" ? "active" : ""}`}
-              onClick={() => switchMode("recover")}
-            >
-              Recuperar
             </button>
           </div>
 
@@ -250,7 +210,7 @@ export default function AuthScreen({ onLogin }) {
             ))}
           </div>
 
-          {authMode === "login" ? (
+          {mode === "login" ? (
             <form className="auth-form" onSubmit={handleLoginSubmit}>
               <label className="auth-field">
                 <span>CPF</span>
@@ -278,12 +238,10 @@ export default function AuthScreen({ onLogin }) {
               {success ? <p className="auth-success">{success}</p> : null}
 
               <button type="submit" className="auth-submit" disabled={loading}>
-                {loading ? "Entrando..." : modeContent.submitLabel}
+                {loading ? "Entrando..." : "Entrar"}
               </button>
             </form>
-          ) : null}
-
-          {authMode === "register" ? (
+          ) : (
             <form className="auth-form" onSubmit={handleRegisterSubmit}>
               <div className="auth-grid">
                 <label className="auth-field">
@@ -291,12 +249,7 @@ export default function AuthScreen({ onLogin }) {
                   <input
                     type="text"
                     value={registerForm.nome}
-                    onChange={(event) =>
-                      setRegisterForm((current) => ({
-                        ...current,
-                        nome: event.target.value,
-                      }))
-                    }
+                    onChange={(event) => updateRegisterField("nome", event.target.value)}
                     required
                   />
                 </label>
@@ -306,13 +259,7 @@ export default function AuthScreen({ onLogin }) {
                   <input
                     type="email"
                     value={registerForm.email}
-                    onChange={(event) =>
-                      setRegisterForm((current) => ({
-                        ...current,
-                        email: event.target.value,
-                      }))
-                    }
-                    required
+                    onChange={(event) => updateRegisterField("email", event.target.value)}
                   />
                 </label>
 
@@ -321,12 +268,7 @@ export default function AuthScreen({ onLogin }) {
                   <input
                     type="text"
                     value={registerForm.telefone}
-                    onChange={(event) =>
-                      setRegisterForm((current) => ({
-                        ...current,
-                        telefone: event.target.value,
-                      }))
-                    }
+                    onChange={(event) => updateRegisterField("telefone", event.target.value)}
                     required
                   />
                 </label>
@@ -336,12 +278,7 @@ export default function AuthScreen({ onLogin }) {
                   <input
                     type="text"
                     value={registerForm.cpf}
-                    onChange={(event) =>
-                      setRegisterForm((current) => ({
-                        ...current,
-                        cpf: event.target.value,
-                      }))
-                    }
+                    onChange={(event) => updateRegisterField("cpf", event.target.value)}
                     required
                   />
                 </label>
@@ -351,12 +288,7 @@ export default function AuthScreen({ onLogin }) {
                   <input
                     type="password"
                     value={registerForm.senha}
-                    onChange={(event) =>
-                      setRegisterForm((current) => ({
-                        ...current,
-                        senha: event.target.value,
-                      }))
-                    }
+                    onChange={(event) => updateRegisterField("senha", event.target.value)}
                     required
                   />
                 </label>
@@ -367,12 +299,7 @@ export default function AuthScreen({ onLogin }) {
                     type="number"
                     min="1"
                     value={registerForm.clinicaId}
-                    onChange={(event) =>
-                      setRegisterForm((current) => ({
-                        ...current,
-                        clinicaId: event.target.value,
-                      }))
-                    }
+                    onChange={(event) => updateRegisterField("clinicaId", event.target.value)}
                     required
                   />
                 </label>
@@ -384,12 +311,7 @@ export default function AuthScreen({ onLogin }) {
                       type="number"
                       min="0"
                       value={registerForm.idade}
-                      onChange={(event) =>
-                        setRegisterForm((current) => ({
-                          ...current,
-                          idade: event.target.value,
-                        }))
-                      }
+                      onChange={(event) => updateRegisterField("idade", event.target.value)}
                       required
                     />
                   </label>
@@ -399,12 +321,7 @@ export default function AuthScreen({ onLogin }) {
                     <input
                       type="text"
                       value={registerForm.crm}
-                      onChange={(event) =>
-                        setRegisterForm((current) => ({
-                          ...current,
-                          crm: event.target.value,
-                        }))
-                      }
+                      onChange={(event) => updateRegisterField("crm", event.target.value)}
                       required
                     />
                   </label>
@@ -415,74 +332,18 @@ export default function AuthScreen({ onLogin }) {
               {success ? <p className="auth-success">{success}</p> : null}
 
               <button type="submit" className="auth-submit" disabled={loading}>
-                {loading ? "Cadastrando..." : modeContent.submitLabel}
+                {loading ? "Cadastrando..." : "Cadastrar"}
               </button>
             </form>
-          ) : null}
-
-          {authMode === "recover" ? (
-            <form className="auth-form" onSubmit={handleRecoverSubmit}>
-              <label className="auth-field">
-                <span>CPF</span>
-                <input
-                  type="text"
-                  value={recoverForm.cpf}
-                  onChange={(event) =>
-                    setRecoverForm((current) => ({
-                      ...current,
-                      cpf: event.target.value,
-                    }))
-                  }
-                  required
-                />
-              </label>
-
-              <label className="auth-field">
-                <span>Email</span>
-                <input
-                  type="email"
-                  value={recoverForm.email}
-                  onChange={(event) =>
-                    setRecoverForm((current) => ({
-                      ...current,
-                      email: event.target.value,
-                    }))
-                  }
-                  required
-                />
-              </label>
-
-              <label className="auth-field">
-                <span>Nova senha</span>
-                <input
-                  type="password"
-                  value={recoverForm.novaSenha}
-                  onChange={(event) =>
-                    setRecoverForm((current) => ({
-                      ...current,
-                      novaSenha: event.target.value,
-                    }))
-                  }
-                  required
-                />
-              </label>
-
-              {error ? <p className="auth-error">{error}</p> : null}
-              {success ? <p className="auth-success">{success}</p> : null}
-
-              <button type="submit" className="auth-submit" disabled={loading}>
-                {loading ? "Atualizando..." : modeContent.submitLabel}
-              </button>
-            </form>
-          ) : null}
+          )}
 
           <div className="auth-footer auth-footer--actions">
             <button type="button" className="auth-link" onClick={() => switchMode("register")}>
               Criar conta
             </button>
-            <button type="button" className="auth-link" onClick={() => switchMode("recover")}>
-              Recuperar senha
-            </button>
+            <span className="auth-note">
+              Recuperacao de senha indisponivel na API atual.
+            </span>
           </div>
         </div>
       </section>
