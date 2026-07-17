@@ -8,7 +8,7 @@ class MedicoProfile(DBBaseModel):
     __tablename__='medicos'
     
     id = Column(Integer, ForeignKey('users.id'), primary_key=True)
-    CRM = Column(String, unique=True, nullable=False)
+    crm = Column(String, unique=True, nullable=False)
     clinica_id = Column(Integer, ForeignKey('clinicas.id'), nullable=False)
     
     user = relationship('UserModel', back_populates='medico')
