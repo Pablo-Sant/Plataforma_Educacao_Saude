@@ -82,11 +82,14 @@ export default function Dashboard({ role, user, onLogout }) {
     role === "paciente" && triagem && !triagemFinalizada;
   const classificacaoTriagemExibida = ocultarResultadoPersistido
     ? null
-    : atendimento?.classificacao_triagem || triagem?.resultado?.classificacao_triagem;
+    : atendimento?.classificacao_triagem ||
+      triagem?.resultado?.classificacao_triagem;
   const classificacaoRiscoExibida = ocultarResultadoPersistido
     ? null
     : atendimento?.classificacao_risco;
-  const resumoIaExibido = ocultarResultadoPersistido ? null : atendimento?.resumo_ia;
+  const resumoIaExibido = ocultarResultadoPersistido
+    ? null
+    : atendimento?.resumo_ia;
 
   async function refreshAtendimentoState(targetAtendimentoId) {
     const atendimentoAtualizado = await getAtendimento(targetAtendimentoId);
@@ -231,12 +234,8 @@ export default function Dashboard({ role, user, onLogout }) {
       <section className="dashboard-grid">
         <aside className="dashboard-summary">
           <div className="summary-card summary-card--focus">
-            <p className="summary-label">Usuario autenticado</p>
-            <strong>{user?.cpf || "--"}</strong>
-            <p className="summary-note">
-              Os dados desta tela agora sao carregados e enviados para a API do
-              backend.
-            </p>
+            <p className="summary-label">Usuário autenticado</p>
+            <strong>{user?.nome || "--"}</strong>
           </div>
 
           <div className="summary-card">
@@ -264,10 +263,16 @@ export default function Dashboard({ role, user, onLogout }) {
           <div className="dashboard-cards">
             <article className="dashboard-card">
               <p>{role === "medico" ? "ID do atendimento" : "ID do usuario"}</p>
-              <strong>{role === "medico" ? atendimento?.id || "--" : user?.id || "--"}</strong>
+              <strong>
+                {role === "medico" ? atendimento?.id || "--" : user?.id || "--"}
+              </strong>
             </article>
             <article className="dashboard-card">
-              <p>{role === "medico" ? "Classificacao da triagem" : "Risco do atendimento"}</p>
+              <p>
+                {role === "medico"
+                  ? "Classificacao da triagem"
+                  : "Risco do atendimento"}
+              </p>
               <strong>
                 {role === "medico"
                   ? triagemLabel(classificacaoTriagemExibida)
@@ -279,7 +284,11 @@ export default function Dashboard({ role, user, onLogout }) {
               <strong>{riscoLabel(classificacaoRiscoExibida)}</strong>
               {role !== "medico" ? (
                 <strong>
-                  {triagemStatusLabel(atendimento, triagemFinalizada, currentQuestion)}
+                  {triagemStatusLabel(
+                    atendimento,
+                    triagemFinalizada,
+                    currentQuestion,
+                  )}
                 </strong>
               ) : null}
             </article>
@@ -400,9 +409,17 @@ export default function Dashboard({ role, user, onLogout }) {
             {role === "medico" && atendimento ? (
               <div className="triagem-result">
                 <p className="triagem-step">Leitura clinica do atendimento</p>
-                <span>Classificacao da triagem: {triagemLabel(classificacaoTriagemExibida)}</span>
+                <span>
+                  Classificacao da triagem:{" "}
+                  {triagemLabel(classificacaoTriagemExibida)}
+                </span>
                 <span>Paciente: #{atendimento.paciente_id || "--"}</span>
-                <span>Medico vinculado: {atendimento.medico_id ? `#${atendimento.medico_id}` : "Nao vinculado"}</span>
+                <span>
+                  Medico vinculado:{" "}
+                  {atendimento.medico_id
+                    ? `#${atendimento.medico_id}`
+                    : "Nao vinculado"}
+                </span>
               </div>
             ) : null}
 
@@ -419,10 +436,12 @@ export default function Dashboard({ role, user, onLogout }) {
             !currentQuestion &&
             !triagemFinalizada ? (
               <div className="triagem-result">
-                <p className="triagem-step">Triagem indisponivel neste ambiente</p>
+                <p className="triagem-step">
+                  Triagem indisponivel neste ambiente
+                </p>
                 <span>
-                  O atendimento foi criado, mas o backend nao encontrou a pergunta
-                  inicial do fluxo para abrir a triagem.
+                  O atendimento foi criado, mas o backend nao encontrou a
+                  pergunta inicial do fluxo para abrir a triagem.
                 </span>
               </div>
             ) : null}

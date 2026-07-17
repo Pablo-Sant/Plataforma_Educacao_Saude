@@ -70,6 +70,12 @@ async function apiRequest(path, options = {}) {
     : await response.text();
 
   if (!response.ok) {
+    if (response.status >= 500 && path === "/usuarios/cadastro") {
+      throw new Error(
+        "O backend falhou ao concluir o cadastro. Se o perfil for medico, verifique se o backend esta consistente entre os campos crm/crn.",
+      );
+    }
+
     if (response.status >= 500 && path.includes("/fluxo/") && path.endsWith("/iniciar")) {
       throw new Error(
         "A triagem nao pode ser iniciada porque o backend nao encontrou a pergunta inicial do fluxo. O atendimento foi criado, mas o banco precisa ter as perguntas e opcoes carregadas.",

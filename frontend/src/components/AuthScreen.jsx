@@ -11,6 +11,30 @@ function onlyDigits(value) {
   return value.replace(/\D/g, "");
 }
 
+function readStoredProfiles() {
+  try {
+    const raw = localStorage.getItem("auth_profiles");
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function persistStoredProfile(profile) {
+  if (!profile?.cpf) {
+    return;
+  }
+
+  const profiles = readStoredProfiles();
+  profiles[profile.cpf] = {
+    cpf: profile.cpf,
+    nome: profile.nome || "",
+    email: profile.email || null,
+    role: profile.role || null,
+  };
+  localStorage.setItem("auth_profiles", JSON.stringify(profiles));
+}
+
 export default function AuthScreen({ onLogin }) {
   const [mode, setMode] = useState("login");
   const [selectedRole, setSelectedRole] = useState("paciente");
@@ -70,12 +94,16 @@ export default function AuthScreen({ onLogin }) {
         throw new Error("Token de autenticacao invalido.");
       }
 
+      const normalizedCpf = onlyDigits(cpf);
+      const storedProfiles = readStoredProfiles();
+      const storedProfile = storedProfiles[normalizedCpf] || {};
+
       onLogin(selectedRole, loginResponse.access_token, {
         id: Number(tokenPayload.sub),
-        cpf: onlyDigits(cpf),
-        nome: `Usuario ${selectedRole}`,
-        email: null,
-        role: selectedRole,
+        cpf: normalizedCpf,
+        nome: storedProfile.nome || `Usuario ${selectedRole}`,
+        email: storedProfile.email || null,
+        role: storedProfile.role || selectedRole,
       });
     } catch (submitError) {
       setError(submitError.message || "Nao foi possivel autenticar.");
@@ -107,7 +135,14 @@ export default function AuthScreen({ onLogin }) {
         payload.crm = registerForm.crm;
       }
 
-      await registerUser(payload);
+      const registeredUser = await registerUser(payload);
+
+      persistStoredProfile({
+        cpf: payload.cpf,
+        nome: registeredUser?.nome || payload.nome,
+        email: registeredUser?.email || payload.email || null,
+        role: registeredUser?.role || payload.role,
+      });
 
       setCpf(payload.cpf);
       setPassword(payload.senha);
