@@ -9,6 +9,9 @@ from backend.schemas.fluxo_schema import TriagemResultado, ClassificacaoUrgencia
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.services.resumo_ia_service import gerar_resumo_ia
+from backend.services.fluxo_service import buscar_respostas_com_perguntas
+
 
 
 MAPA_CLASSIFICACAO_URGENCIA_PARA_RISCO = {
@@ -64,13 +67,17 @@ class AtendimentoService:
         atendimento.classificacao_triagem = resultado.classificacao_triagem.value
 
         atendimento.status = StatusEnum.AGUARDANDO_ATENDIMENTO
+        
+        resposta = await buscar_respostas_com_perguntas(db, atendimento_id)
 
-        atendimento.resumo_ia = (
-            f"Paciente classificado como risco {risco.value} "
-            f"(triagem: {resultado.classificacao_triagem.value}, "
-            f"pontuação: {resultado.pontuacao_total}) "
-            f"durante a triagem."
+        resumo = await gerar_resumo_ia(
+            classificacao_risco=risco.value,
+            classificacao_triagem=resultado.classificacao_triagem.value,
+            pontuacao_total=resultado.pontuacao_total,
+            respostas=resposta  
         )
+
+        atendimento.resumo_ia = resumo
 
         await db.commit()
         await db.refresh(atendimento)

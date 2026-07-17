@@ -101,3 +101,32 @@ async def limpar_respostas_atendimento(
     )
 
     await db.commit()
+    
+    
+async def buscar_respostas_com_perguntas(
+    db: AsyncSession,
+    atendimento_id: int
+):
+    result = await db.execute(
+        select(
+            PerguntaModel.texto,
+            RespostaModel.resposta
+        )
+        .join(
+            PerguntaModel,
+            PerguntaModel.id == RespostaModel.pergunta_id
+        )
+        .where(
+            RespostaModel.atendimento_id == atendimento_id
+        )
+        .order_by(
+            RespostaModel.id
+        )
+    )
+
+    linhas = result.all()
+
+    return [
+        {"pergunta": pergunta, "resposta": resposta}
+        for pergunta, resposta in linhas
+    ]

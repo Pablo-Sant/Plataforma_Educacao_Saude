@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     JWT_SECRET: str
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
+    GROQ_API_KEY: str
     
 
     class Config:

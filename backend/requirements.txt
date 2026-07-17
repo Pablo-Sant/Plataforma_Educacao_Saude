@@ -10,3 +10,4 @@ python-multipart
 pydantic_settings
 pydantic[email]
 argon2-cffi
+groq
