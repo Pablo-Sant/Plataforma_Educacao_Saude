@@ -2,6 +2,13 @@
   min-height: 100vh;
   padding: 32px 24px 48px;
   background: #eff6ff;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+}
+
+.dashboard-page > * {
+  width: min(1180px, 100%);
 }
 
 .dashboard-topbar {
@@ -29,6 +36,7 @@
   display: flex;
   gap: 14px;
   align-items: center;
+  flex-wrap: wrap;
   background: white;
   padding: 18px 22px;
   border-radius: 24px;
@@ -81,7 +89,6 @@
 
 .summary-label {
   margin: 0 0 8px;
-  color: #64748b;
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -95,7 +102,6 @@
 
 .summary-note {
   margin: 0;
-  color: #64748b;
   line-height: 1.7;
 }
 
@@ -124,6 +130,7 @@
 }
 
 .dashboard-card strong {
+  display: block;
   font-size: 28px;
   color: #0f172a;
 }
@@ -159,6 +166,7 @@
   margin: 8px 0 0;
   font-size: 24px;
   color: #0f172a;
+  line-height: 1.2;
 }
 
 .panel-header button,
@@ -200,6 +208,7 @@
 
 .dashboard-form button {
   width: fit-content;
+  min-width: 172px;
   background: #1d4ed8;
   color: white;
   border: 0;
@@ -307,6 +316,7 @@
 
 .triagem-card button {
   width: fit-content;
+  min-width: 144px;
   background: #1d4ed8;
   color: white;
   border: 0;
@@ -348,6 +358,10 @@
   .dashboard-cards {
     grid-template-columns: 1fr 1fr;
   }
+
+  .dashboard-page {
+    padding-inline: 18px;
+  }
 }
 
 @media (max-width: 760px) {
@@ -358,6 +372,10 @@
 
   .dashboard-user {
     justify-content: space-between;
+  }
+
+  .dashboard-page {
+    padding: 24px 16px 40px;
   }
 
   .dashboard-cards {
@@ -375,5 +393,13 @@
   .protocol-row {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+
+  .dashboard-form button,
+  .triagem-card button,
+  .panel-header button,
+  .table-header button,
+  .dashboard-logout {
+    width: 100%;
   }
 }

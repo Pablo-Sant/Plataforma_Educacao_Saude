@@ -74,6 +74,7 @@ export default function Dashboard({ role, user, onLogout }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loadingAction, setLoadingAction] = useState(false);
+  const [triagemIndisponivel, setTriagemIndisponivel] = useState(false);
 
   const currentQuestion = triagem?.proxima_pergunta;
   const triagemFinalizada = triagem?.concluido;
@@ -98,6 +99,7 @@ export default function Dashboard({ role, user, onLogout }) {
     setError("");
     setMessage("");
     setLoadingAction(true);
+    setTriagemIndisponivel(false);
 
     try {
       const created = await createAtendimento({
@@ -116,6 +118,7 @@ export default function Dashboard({ role, user, onLogout }) {
         setMessage(`Atendimento #${created.id} criado e triagem iniciada.`);
       } catch (triagemError) {
         setTriagem(null);
+        setTriagemIndisponivel(true);
         setError(triagemError.message);
       }
     } catch (requestError) {
@@ -135,6 +138,7 @@ export default function Dashboard({ role, user, onLogout }) {
     setError("");
     setMessage("");
     setLoadingAction(true);
+    setTriagemIndisponivel(false);
 
     try {
       const fluxo = await answerTriagem(atendimento.id, {
@@ -164,6 +168,7 @@ export default function Dashboard({ role, user, onLogout }) {
     setError("");
     setMessage("");
     setLoadingAction(true);
+    setTriagemIndisponivel(false);
 
     try {
       const fluxo = await restartTriagem(atendimento.id);
@@ -172,6 +177,7 @@ export default function Dashboard({ role, user, onLogout }) {
       setSelectedOptionId("");
       setMessage("Triagem reiniciada.");
     } catch (requestError) {
+      setTriagemIndisponivel(true);
       setError(requestError.message || "Nao foi possivel reiniciar a triagem.");
     } finally {
       setLoadingAction(false);
@@ -183,6 +189,7 @@ export default function Dashboard({ role, user, onLogout }) {
     setError("");
     setMessage("");
     setLoadingAction(true);
+    setTriagemIndisponivel(false);
 
     try {
       await refreshAtendimentoState(Number(atendimentoId));
@@ -408,14 +415,14 @@ export default function Dashboard({ role, user, onLogout }) {
 
             {role === "paciente" &&
             atendimento &&
+            triagemIndisponivel &&
             !currentQuestion &&
-            !triagemFinalizada &&
-            !resumoIaExibido ? (
+            !triagemFinalizada ? (
               <div className="triagem-result">
-                <p className="triagem-step">Triagem indisponivel</p>
+                <p className="triagem-step">Triagem indisponivel neste ambiente</p>
                 <span>
-                  O atendimento foi criado, mas o backend nao conseguiu iniciar o
-                  fluxo de perguntas.
+                  O atendimento foi criado, mas o backend nao encontrou a pergunta
+                  inicial do fluxo para abrir a triagem.
                 </span>
               </div>
             ) : null}
