@@ -8,6 +8,34 @@ import {
 } from "../services/api";
 import "./Dashboard.css";
 
+function readStoredProfiles() {
+  try {
+    const raw = localStorage.getItem("auth_profiles");
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function readStoredAtendimentoPatients() {
+  try {
+    const raw = localStorage.getItem("atendimento_patient_names");
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function persistAtendimentoPatientName(atendimentoId, patientName) {
+  if (!atendimentoId || !patientName) {
+    return;
+  }
+
+  const current = readStoredAtendimentoPatients();
+  current[String(atendimentoId)] = patientName;
+  localStorage.setItem("atendimento_patient_names", JSON.stringify(current));
+}
+
 function formatDate(dateValue) {
   if (!dateValue) {
     return "--";
@@ -90,6 +118,16 @@ export default function Dashboard({ role, user, onLogout }) {
   const resumoIaExibido = ocultarResultadoPersistido
     ? null
     : atendimento?.resumo_ia;
+  const storedProfiles = readStoredProfiles();
+  const storedAtendimentoPatients = readStoredAtendimentoPatients();
+  const pacientePerfil =
+    Object.values(storedProfiles).find(
+      (profile) => Number(profile?.id) === Number(atendimento?.paciente_id),
+    ) || null;
+  const pacienteNomeExibido =
+    storedAtendimentoPatients[String(atendimento?.id)] ||
+    pacientePerfil?.nome ||
+    (atendimento?.paciente_id ? `Paciente #${atendimento.paciente_id}` : "--");
 
   async function refreshAtendimentoState(targetAtendimentoId) {
     const atendimentoAtualizado = await getAtendimento(targetAtendimentoId);
@@ -110,6 +148,7 @@ export default function Dashboard({ role, user, onLogout }) {
         paciente_id: user.id,
       });
 
+      persistAtendimentoPatientName(created.id, user?.nome || "Paciente");
       setAtendimento(created);
       setAtendimentoId(String(created.id));
       setMessage(`Atendimento #${created.id} criado com sucesso.`);
@@ -304,7 +343,7 @@ export default function Dashboard({ role, user, onLogout }) {
                 </span>
                 <h2>
                   {role === "medico"
-                    ? "Consultar dados reais da API"
+                    ? "Consultar atendimento e triagem"
                     : "Criar atendimento e iniciar triagem"}
                 </h2>
               </div>
@@ -413,7 +452,7 @@ export default function Dashboard({ role, user, onLogout }) {
                   Classificacao da triagem:{" "}
                   {triagemLabel(classificacaoTriagemExibida)}
                 </span>
-                <span>Paciente: #{atendimento.paciente_id || "--"}</span>
+                <span>Paciente: {pacienteNomeExibido}</span>
                 <span>
                   Medico vinculado:{" "}
                   {atendimento.medico_id
