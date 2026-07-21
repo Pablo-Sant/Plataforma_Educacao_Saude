@@ -75,7 +75,7 @@ async def finalizar_triagem(db: AsyncSession, atendimento_id: int):
         pontuacao_total=pontuacao_total
     )
 
-    # Ponto de integração: persiste o resultado no atendimento
+
     await AtendimentoService.atualizar_com_triagem(
         db, atendimento_id, resultado
     )

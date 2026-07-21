@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   answerTriagem,
   createAtendimento,
   getAtendimento,
+  getFila,
   restartTriagem,
   startTriagem,
 } from "../services/api";
@@ -93,6 +94,23 @@ function triagemStatusLabel(atendimento, triagemFinalizada, currentQuestion) {
   return "Aguardando";
 }
 
+function tempoEspera(dataAtendimento) {
+  if (!dataAtendimento) {
+    return "--";
+  }
+
+  const diffMs = Date.now() - new Date(dataAtendimento).getTime();
+  const diffMin = Math.max(0, Math.floor(diffMs / 60000));
+
+  if (diffMin < 60) {
+    return `${diffMin} min`;
+  }
+
+  const horas = Math.floor(diffMin / 60);
+  const minutosRestantes = diffMin % 60;
+  return `${horas}h ${minutosRestantes}min`;
+}
+
 export default function Dashboard({ role, user, onLogout }) {
   const [clinicaId, setClinicaId] = useState("");
   const [atendimentoId, setAtendimentoId] = useState("");
@@ -103,6 +121,8 @@ export default function Dashboard({ role, user, onLogout }) {
   const [error, setError] = useState("");
   const [loadingAction, setLoadingAction] = useState(false);
   const [triagemIndisponivel, setTriagemIndisponivel] = useState(false);
+  const [fila, setFila] = useState([]);
+  const [filaError, setFilaError] = useState("");
 
   const currentQuestion = triagem?.proxima_pergunta;
   const triagemFinalizada = triagem?.concluido;
@@ -128,6 +148,34 @@ export default function Dashboard({ role, user, onLogout }) {
     storedAtendimentoPatients[String(atendimento?.id)] ||
     pacientePerfil?.nome ||
     (atendimento?.paciente_id ? `Paciente #${atendimento.paciente_id}` : "--");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadFila() {
+      try {
+        const filaAtual = await getFila();
+        if (active) {
+          setFila(filaAtual);
+          setFilaError("");
+        }
+      } catch (filaRequestError) {
+        if (active) {
+          setFilaError(
+            filaRequestError.message || "Nao foi possivel carregar a fila.",
+          );
+        }
+      }
+    }
+
+    loadFila();
+    const intervalId = setInterval(loadFila, 10000);
+
+    return () => {
+      active = false;
+      clearInterval(intervalId);
+    };
+  }, []);
 
   async function refreshAtendimentoState(targetAtendimentoId) {
     const atendimentoAtualizado = await getAtendimento(targetAtendimentoId);
@@ -403,6 +451,50 @@ export default function Dashboard({ role, user, onLogout }) {
                 </p>
               ) : null}
             </div>
+          </div>
+
+          <div className="dashboard-table-card">
+            <div className="table-header">
+              <div>
+                <p>Fila de espera</p>
+                <strong>Atendimentos aguardando, por prioridade</strong>
+              </div>
+            </div>
+
+            {filaError ? (
+              <p className="dashboard-feedback dashboard-feedback--error">
+                {filaError}
+              </p>
+            ) : null}
+
+            {fila.length > 0 ? (
+              <div className="fila-table">
+                <div className="fila-row fila-row--head">
+                  <span>Pos.</span>
+                  <span>Paciente</span>
+                  <span>Risco</span>
+                  <span>Triagem</span>
+                  <span>Espera</span>
+                </div>
+                {fila.map((item, index) => (
+                  <div className="fila-row" key={item.id}>
+                    <span>{index + 1}</span>
+                    <span>#{item.paciente_id}</span>
+                    <span
+                      className={`protocol-status protocol-status--${item.classificacao_risco}`}
+                    >
+                      {riscoLabel(item.classificacao_risco)}
+                    </span>
+                    <span>{triagemLabel(item.classificacao_triagem)}</span>
+                    <span>{tempoEspera(item.data_atendimento)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="empty-state">
+                Nenhum atendimento aguardando no momento.
+              </p>
+            )}
           </div>
 
           <div className="dashboard-table-card">

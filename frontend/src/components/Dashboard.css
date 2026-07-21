@@ -403,3 +403,46 @@
     width: 100%;
   }
 }
+
+.fila-table {
+  display: grid;
+  gap: 12px;
+}
+
+.fila-row {
+  display: grid;
+  grid-template-columns: 0.6fr 1fr 1fr 1.6fr 1fr;
+  gap: 12px;
+  padding: 16px 18px;
+  align-items: center;
+  border-radius: 18px;
+  background: #f8fbff;
+}
+
+.fila-row--head {
+  background: transparent;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.protocol-status--alto {
+  background: rgba(239, 68, 68, 0.14);
+  color: #b91c1c;
+}
+
+.protocol-status--medio {
+  background: rgba(234, 179, 8, 0.16);
+  color: #b45309;
+}
+
+.protocol-status--baixo {
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+}
+
+@media (max-width: 760px) {
+  .fila-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}

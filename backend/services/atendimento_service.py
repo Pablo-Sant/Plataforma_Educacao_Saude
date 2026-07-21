@@ -41,6 +41,7 @@ class AtendimentoService:
     @staticmethod
     async def buscar_por_id(atendimento_id: int, db: AsyncSession):
         return await db.get(AtendimentoModel, atendimento_id)
+    
 
     @staticmethod
     async def atualizar_com_triagem(

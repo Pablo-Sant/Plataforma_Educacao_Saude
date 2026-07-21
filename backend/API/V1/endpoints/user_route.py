@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.deps import get_session, get_current_user
 from backend.services.user_service import UserService
 from backend.exceptions.users_exceptions import UserJaExistente,PacientePrecisaIdade, MedicoPrecisaCRM, UsuarioNaoCadastrado, EmailOuSenhaIncorretos
-from backend.schemas.token import TokenResponse
+from backend.schemas.token_schema import TokenResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from backend.models.user_model import UserModel
 import logging

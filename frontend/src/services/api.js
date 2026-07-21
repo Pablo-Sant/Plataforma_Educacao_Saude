@@ -167,6 +167,12 @@ export async function getTriagemResult(atendimentoId) {
   });
 }
 
+export async function getFila() {
+  return apiRequest("/fila/", {
+    method: "GET",
+  });
+}
+
 export function parseTokenPayload(token) {
   if (!token) {
     return null;
