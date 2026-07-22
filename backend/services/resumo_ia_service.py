@@ -35,7 +35,7 @@ se houver. Não invente sintomas que não foram informados."""
             {"role": "user", "content": prompt}
         ],
         temperature=0.3,
-        max_tokens=200
+        max_tokens=500
     )
 
     return response.choices[0].message.content
