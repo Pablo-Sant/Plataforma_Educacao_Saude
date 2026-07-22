@@ -479,7 +479,7 @@ export default function Dashboard({ role, user, onLogout }) {
                 {fila.map((item, index) => (
                   <div className="fila-row" key={item.id}>
                     <span>{index + 1}</span>
-                    <span>#{item.paciente_id}</span>
+                    <span>{item.paciente_nome}</span>
                     <span
                       className={`protocol-status protocol-status--${item.classificacao_risco}`}
                     >
